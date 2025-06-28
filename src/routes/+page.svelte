@@ -41,8 +41,6 @@
 
 	let sidebarOpen = $state(false);
 	let selectedId = $state<string | null>(null);
-	let selectedElement = $state<UserShape | UserTextElement | UserImage | null>(null);
-	let editBarVisible = $state(false);
 	let canvasContainerRef: any;
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
@@ -55,20 +53,18 @@
 	let canvasWidth = $state(500);
 	let canvasHeight = $state(400);
 
-	// Update selected element when selectedId changes
-	$effect(() => {
-		if (selectedId) {
-			selectedElement = 
-				$shapes.find(shape => shape.id === selectedId) || 
-				$textElements.find(text => text.id === selectedId) || 
-				$images.find(image => image.id === selectedId) ||
-				null;
-			editBarVisible = !!selectedElement;
-		} else {
-			selectedElement = null;
-			editBarVisible = false;
-		}
-	});
+	// Svelte 5 derived values - computed reactively
+	const selectedElement = $derived(
+		selectedId 
+			? $shapes.find(shape => shape.id === selectedId) || 
+			  $textElements.find(text => text.id === selectedId) || 
+			  $images.find(image => image.id === selectedId) ||
+			  null
+			: null
+	);
+	
+	const editBarVisible = $derived(!!selectedElement);
+
 
 	// Event handlers
 	const shapeDragEndHandler = $derived(createShapeDragEndHandler(canvasZoom));
@@ -85,49 +81,6 @@
 
 	// Simplified - removed complex event setup function
 
-	let transformerRef = $state<any>();
-	let layerRef = $state<any>();
-	let stageRef = $state<any>();
-
-	function updateTransformer() {
-		if (!transformerRef || !selectedId || !layerRef) {
-			return;
-		}
-
-		// Try different ways to get the transformer node
-		let transformerNode = null;
-		if (typeof transformerRef.getNode === 'function') {
-			transformerNode = transformerRef.getNode();
-		} else if (transformerRef.node) {
-			transformerNode = transformerRef.node;
-		} else if (transformerRef._node) {
-			transformerNode = transformerRef._node;
-		}
-
-		// Try different ways to get the layer node
-		let layer = null;
-		if (typeof layerRef.getNode === 'function') {
-			layer = layerRef.getNode();
-		} else if (layerRef.node) {
-			layer = layerRef.node;
-		} else if (layerRef._node) {
-			layer = layerRef._node;
-		}
-
-		if (!transformerNode || !layer) {
-			return;
-		}
-
-		// Find the selected shape node by ID
-		const selectedNode = layer.findOne(`#${selectedId}`);
-
-		if (selectedNode) {
-			transformerNode.nodes([selectedNode]);
-			// Ensure transformer has highest zIndex
-			transformerNode.zIndex(999999);
-			layer.batchDraw();
-		}
-	}
 
 
 	// Create handler functions with state setters
@@ -226,9 +179,6 @@
 		<!-- Canvas Container -->
 		<CanvasContainer 
 			bind:this={canvasContainerRef}
-			bind:transformerRef
-			bind:layerRef
-			bind:stageRef
 			{canvasWidth}
 			{canvasHeight}
 			{canvasZoom}
@@ -242,33 +192,6 @@
 				const clickedOnEmpty = e.target === e.target.getStage();
 				if (clickedOnEmpty) {
 					selectedId = null;
-					if (transformerRef) {
-						let transformerNode = null;
-						if (typeof transformerRef.getNode === 'function') {
-							transformerNode = transformerRef.getNode();
-						} else if (transformerRef.node) {
-							transformerNode = transformerRef.node;
-						} else if (transformerRef._node) {
-							transformerNode = transformerRef._node;
-						}
-
-						if (transformerNode) {
-							transformerNode.nodes([]);
-							if (layerRef) {
-								let layer = null;
-								if (typeof layerRef.getNode === 'function') {
-									layer = layerRef.getNode();
-								} else if (layerRef.node) {
-									layer = layerRef.node;
-								} else if (layerRef._node) {
-									layer = layerRef._node;
-								}
-								if (layer) {
-									layer.batchDraw();
-								}
-							}
-						}
-					}
 				}
 			}}
 			onWheel={zoomHandler}
@@ -299,6 +222,8 @@
 	/>
 
 	<!-- Download Modal -->
+	<!-- Download Modal disabled for now -->
+	<!--
 	<DownloadModal 
 		isOpen={downloadModalOpen}
 		{stageRef}
@@ -306,4 +231,5 @@
 		{designTitle}
 		onClose={() => downloadModalOpen = false}
 	/>
+	-->
 </div>
