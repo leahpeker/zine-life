@@ -7,12 +7,14 @@ use sea_orm_migration::MigratorTrait;
 mod entities;
 mod migrations;
 mod auth;
+mod handlers;
 
 #[cfg(test)]
 mod test_utils;
 
 use migrations::Migrator;
 use auth::{OAuthConfig, google_login, google_callback};
+use handlers::{designs, auth as auth_handlers};
 
 async fn health_check() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
@@ -74,8 +76,18 @@ async fn main(
                     .route("/health", web::get().to(health_check))
                     .route("/api/hello", web::get().to(hello))
                     .route("/api/db-status", web::get().to(db_status))
+                    // Auth routes
                     .route("/auth/google", web::get().to(google_login))
                     .route("/auth/google/callback", web::get().to(google_callback))
+                    .route("/api/auth/me", web::get().to(auth_handlers::get_current_user_info))
+                    .route("/api/auth/logout", web::post().to(auth_handlers::logout))
+                    // Design routes
+                    .route("/api/designs", web::get().to(designs::list_designs))
+                    .route("/api/designs", web::post().to(designs::create_design))
+                    .route("/api/designs/public", web::get().to(designs::list_public_designs))
+                    .route("/api/designs/{id}", web::get().to(designs::get_design))
+                    .route("/api/designs/{id}", web::put().to(designs::update_design))
+                    .route("/api/designs/{id}", web::delete().to(designs::delete_design))
             );
     };
 
