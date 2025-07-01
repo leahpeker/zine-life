@@ -2,6 +2,7 @@
 	import { shapes, type UserShape } from '../lib/stores/shapeStore';
 	import { textElements, type UserTextElement } from '../lib/stores/textStore';
 	import { images, type UserImage } from '../lib/stores/imageStore';
+	import { history } from '../lib/stores/historyStore';
 	import { 
 		handleUpdateCanvasBackground,
 		handleToggleGrid,
@@ -42,6 +43,8 @@
 	let sidebarOpen = $state(false);
 	let selectedId = $state<string | null>(null);
 	let canvasContainerRef: any;
+	let stageRef: any;
+	let updateTransformer: () => void;
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
 	let downloadModalOpen = $state(false);
@@ -129,6 +132,10 @@
 		title={designTitle}
 		onTitleChange={titleChangeHandler}
 		onExportClick={() => downloadModalOpen = true}
+		onUndo={() => history.undo()}
+		onRedo={() => history.redo()}
+		canUndo={history.canUndo($history)}
+		canRedo={history.canRedo($history)}
 	/>
 
 	<!-- Sidebar Component (below header) -->
@@ -179,6 +186,8 @@
 		<!-- Canvas Container -->
 		<CanvasContainer 
 			bind:this={canvasContainerRef}
+			bind:stageRef
+			bind:updateTransformer
 			{canvasWidth}
 			{canvasHeight}
 			{canvasZoom}
@@ -202,11 +211,11 @@
 			onImageDragEnd={imageDragEndHandler}
 			onElementClick={(id) => {
 				selectedId = id;
-				updateTransformer();
+				if (updateTransformer) updateTransformer();
 			}}
 			onTextElementClick={(id) => {
 				selectedId = id;
-				updateTransformer();
+				if (updateTransformer) updateTransformer();
 			}}
 			onTextElementDblClick={handleTextElementDblClick}
 			onTextElementDragEnd={textElementDragEndHandler}
