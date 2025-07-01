@@ -43,8 +43,14 @@
 	let sidebarOpen = $state(false);
 	let selectedId = $state<string | null>(null);
 	let canvasContainerRef: any;
-	let stageRef: any;
-	let updateTransformer: () => void;
+	let stageRef = $state<any>();
+	let updateTransformer = $state<(() => void) | undefined>();
+	
+	// Handle stage ready callback
+	function handleStageReady(stage: any) {
+		console.log('Stage ready in main page:', stage);
+		stageRef = stage;
+	}
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
 	let downloadModalOpen = $state(false);
@@ -79,6 +85,13 @@
 	$effect(() => {
 		if (stageRef) {
 			panHandlers.setStageRef(stageRef);
+		}
+	});
+
+	// Clear selection if selected element no longer exists (e.g., after undo)
+	$effect(() => {
+		if (selectedId && !selectedElement) {
+			selectedId = null;
 		}
 	});
 
@@ -186,8 +199,8 @@
 		<!-- Canvas Container -->
 		<CanvasContainer 
 			bind:this={canvasContainerRef}
-			bind:stageRef
 			bind:updateTransformer
+			onStageReady={handleStageReady}
 			{canvasWidth}
 			{canvasHeight}
 			{canvasZoom}
@@ -231,8 +244,6 @@
 	/>
 
 	<!-- Download Modal -->
-	<!-- Download Modal disabled for now -->
-	<!--
 	<DownloadModal 
 		isOpen={downloadModalOpen}
 		{stageRef}
@@ -240,5 +251,4 @@
 		{designTitle}
 		onClose={() => downloadModalOpen = false}
 	/>
-	-->
 </div>
