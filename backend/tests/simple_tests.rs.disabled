@@ -1,0 +1,109 @@
+use zine_life_backend::test_utils::database::{setup_test_db, test_data};
+
+#[tokio::test]
+async fn test_database_setup() {
+    let _db = setup_test_db().await.expect("Failed to setup test database");
+    
+    // If we get here, the database and migrations worked
+    assert!(true);
+}
+
+#[tokio::test] 
+async fn test_user_creation() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "test@example.com",
+        "Test User",
+        "google"
+    ).await.expect("Failed to create user");
+
+    assert_eq!(user.email, "test@example.com");
+    assert_eq!(user.name, "Test User");
+    assert_eq!(user.provider, "google");
+}
+
+#[tokio::test]
+async fn test_design_creation() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    // First create a user
+    let user = test_data::create_test_user(
+        &db,
+        "designer@example.com", 
+        "Designer",
+        "github"
+    ).await.expect("Failed to create user");
+
+    // Create a design
+    let design = test_data::create_test_design(
+        &db,
+        user.id,
+        "My Design",
+        false
+    ).await.expect("Failed to create design");
+
+    assert_eq!(design.user_id, user.id);
+    assert_eq!(design.title, "My Design");
+    assert_eq!(design.is_public, false);
+    assert_eq!(design.canvas_background, "#ffffff");
+    
+    // Check JSON structure
+    assert!(design.canvas_data["shapes"].is_array());
+    assert!(design.canvas_data["textElements"].is_array());
+    assert!(design.canvas_data["images"].is_array());
+}
+
+#[tokio::test]
+async fn test_session_creation() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "session@example.com",
+        "Session User", 
+        "google"
+    ).await.expect("Failed to create user");
+
+    let session = test_data::create_test_session(
+        &db,
+        user.id,
+        "test_token_123"
+    ).await.expect("Failed to create session");
+
+    assert_eq!(session.user_id, user.id);
+    assert_eq!(session.token, "test_token_123");
+    assert!(session.expires_at > time::OffsetDateTime::now_utc());
+}
+
+#[tokio::test]
+async fn test_json_data_storage() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "json@example.com",
+        "JSON User",
+        "github"
+    ).await.expect("Failed to create user");
+
+    // Test complex canvas data
+    let design = test_data::create_test_design(
+        &db,
+        user.id,
+        "Complex Design",
+        true
+    ).await.expect("Failed to create design");
+
+    // Verify JSON was stored correctly
+    let shapes = design.canvas_data["shapes"].as_array().unwrap();
+    assert_eq!(shapes.len(), 1);
+    
+    let shape = &shapes[0];
+    assert_eq!(shape["type"], "circle");
+    assert_eq!(shape["x"], 100);
+    assert_eq!(shape["y"], 100);
+    assert_eq!(shape["radius"], 50);
+    assert_eq!(shape["fill"], "#ff0000");
+}

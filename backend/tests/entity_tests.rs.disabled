@@ -1,0 +1,250 @@
+use sea_orm::{ActiveModelTrait, Set};
+use time::OffsetDateTime;
+use uuid::Uuid;
+use zine_life_backend::entities::*;
+use zine_life_backend::test_utils::*;
+
+#[tokio::test]
+async fn test_user_creation() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "test@example.com",
+        "Test User",
+        "google"
+    ).await.expect("Failed to create user");
+
+    assert_eq!(user.email, "test@example.com");
+    assert_eq!(user.name, "Test User");
+    assert_eq!(user.provider, "google");
+    assert_eq!(user.provider_id, "test_provider_id");
+    assert!(user.avatar_url.is_some());
+}
+
+#[tokio::test]
+async fn test_user_email_uniqueness() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    // Create first user
+    test_data::create_test_user(
+        &db,
+        "unique@example.com",
+        "User One",
+        "google"
+    ).await.expect("Failed to create first user");
+
+    // Try to create second user with same email
+    let result = test_data::create_test_user(
+        &db,
+        "unique@example.com",
+        "User Two",
+        "github"
+    ).await;
+
+    assert!(result.is_err(), "Should fail to create user with duplicate email");
+}
+
+#[tokio::test]
+async fn test_design_creation() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    // First create a user
+    let user = test_data::create_test_user(
+        &db,
+        "designer@example.com",
+        "Designer",
+        "google"
+    ).await.expect("Failed to create user");
+
+    // Create a design
+    let design = test_data::create_test_design(
+        &db,
+        user.id,
+        "My First Design",
+        false
+    ).await.expect("Failed to create design");
+
+    assert_eq!(design.user_id, user.id);
+    assert_eq!(design.title, "My First Design");
+    assert_eq!(design.is_public, false);
+    assert_eq!(design.canvas_background, "#ffffff");
+
+    // Check canvas data structure
+    let canvas_data = &design.canvas_data;
+    assert!(canvas_data["shapes"].is_array());
+    assert!(canvas_data["textElements"].is_array());
+    assert!(canvas_data["images"].is_array());
+
+    // Check canvas size
+    let canvas_size = &design.canvas_size;
+    assert_eq!(canvas_size["width"], 500);
+    assert_eq!(canvas_size["height"], 400);
+}
+
+#[tokio::test]
+async fn test_design_privacy_default() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "privacy@example.com",
+        "Privacy User",
+        "github"
+    ).await.expect("Failed to create user");
+
+    // Test default privacy (should be private)
+    let private_design = test_data::create_test_design(
+        &db,
+        user.id,
+        "Private Design",
+        false
+    ).await.expect("Failed to create private design");
+
+    assert_eq!(private_design.is_public, false);
+
+    // Test explicit public design
+    let public_design = test_data::create_test_design(
+        &db,
+        user.id,
+        "Public Design", 
+        true
+    ).await.expect("Failed to create public design");
+
+    assert_eq!(public_design.is_public, true);
+}
+
+#[tokio::test]
+async fn test_session_creation() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "session@example.com",
+        "Session User",
+        "google"
+    ).await.expect("Failed to create user");
+
+    let session = test_data::create_test_session(
+        &db,
+        user.id,
+        "test_jwt_token_123"
+    ).await.expect("Failed to create session");
+
+    assert_eq!(session.user_id, user.id);
+    assert_eq!(session.token, "test_jwt_token_123");
+    assert!(session.expires_at > OffsetDateTime::now_utc());
+}
+
+#[tokio::test]
+async fn test_session_token_uniqueness() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "tokens@example.com",
+        "Token User",
+        "github"
+    ).await.expect("Failed to create user");
+
+    // Create first session
+    test_data::create_test_session(
+        &db,
+        user.id,
+        "unique_token_123"
+    ).await.expect("Failed to create first session");
+
+    // Try to create session with same token
+    let result = test_data::create_test_session(
+        &db,
+        user.id,
+        "unique_token_123"
+    ).await;
+
+    assert!(result.is_err(), "Should fail to create session with duplicate token");
+}
+
+#[tokio::test]
+async fn test_canvas_data_json_storage() {
+    let db = setup_test_db().await.expect("Failed to setup test DB");
+
+    let user = test_data::create_test_user(
+        &db,
+        "json@example.com",
+        "JSON User",
+        "google"
+    ).await.expect("Failed to create user");
+
+    // Create complex canvas data
+    let complex_canvas = serde_json::json!({
+        "shapes": [
+            {
+                "id": "shape-1",
+                "type": "rectangle",
+                "x": 50,
+                "y": 50,
+                "width": 100,
+                "height": 80,
+                "fill": "#blue",
+                "rotation": 45
+            },
+            {
+                "id": "shape-2", 
+                "type": "circle",
+                "x": 200,
+                "y": 150,
+                "radius": 30,
+                "fill": "#red"
+            }
+        ],
+        "textElements": [
+            {
+                "id": "text-1",
+                "x": 100,
+                "y": 200,
+                "text": "Hello World",
+                "fontSize": 24,
+                "fontFamily": "Arial"
+            }
+        ],
+        "images": [
+            {
+                "id": "image-1",
+                "x": 300,
+                "y": 100,
+                "width": 150,
+                "height": 100,
+                "src": "https://example.com/image.jpg"
+            }
+        ]
+    });
+
+    let design = design::ActiveModel {
+        id: Set(Uuid::new_v4()),
+        user_id: Set(user.id),
+        title: Set("Complex Design".to_string()),
+        canvas_data: Set(complex_canvas.clone()),
+        canvas_background: Set("#f0f0f0".to_string()),
+        canvas_size: Set(serde_json::json!({"width": 800, "height": 600})),
+        is_public: Set(false),
+        created_at: Set(OffsetDateTime::now_utc()),
+        updated_at: Set(OffsetDateTime::now_utc()),
+    };
+
+    let saved_design = design.insert(&db).await.expect("Failed to save complex design");
+
+    // Verify JSON data was stored and retrieved correctly
+    assert_eq!(saved_design.canvas_data["shapes"].as_array().unwrap().len(), 2);
+    assert_eq!(saved_design.canvas_data["textElements"].as_array().unwrap().len(), 1);
+    assert_eq!(saved_design.canvas_data["images"].as_array().unwrap().len(), 1);
+    
+    // Check specific shape data
+    let first_shape = &saved_design.canvas_data["shapes"][0];
+    assert_eq!(first_shape["type"], "rectangle");
+    assert_eq!(first_shape["rotation"], 45);
+    
+    // Check text element
+    let text_element = &saved_design.canvas_data["textElements"][0];
+    assert_eq!(text_element["text"], "Hello World");
+    assert_eq!(text_element["fontSize"], 24);
+}

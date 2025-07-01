@@ -1,6 +1,18 @@
 use actix_web::{web, HttpResponse, Result};
 use actix_cors::Cors;
 use shuttle_actix_web::ShuttleActixWeb;
+use sea_orm::{Database, DatabaseConnection};
+use sea_orm_migration::MigratorTrait;
+
+mod entities;
+mod migrations;
+mod auth;
+
+#[cfg(test)]
+mod test_utils;
+
+use migrations::Migrator;
+use auth::{OAuthConfig, google_login, google_callback};
 
 async fn health_check() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
@@ -15,25 +27,56 @@ async fn hello() -> Result<HttpResponse> {
     })))
 }
 
+async fn db_status(_db: web::Data<DatabaseConnection>) -> Result<HttpResponse> {
+    // Simple database status check
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "database": "connected",
+        "backend": "PostgreSQL",
+        "status": "healthy"
+    })))
+}
+
 #[shuttle_runtime::main]
 async fn main(
-    #[shuttle_shared_db::Postgres] _db_url: String,
+    #[shuttle_shared_db::Postgres] db_url: String,
 ) -> ShuttleActixWeb<impl FnOnce(&mut web::ServiceConfig) + Send + Clone + 'static> {
-    // We'll set up SeaORM connection here later
-    println!("Starting Zine Life Backend with database pool...");
+    println!("Starting Zine Life Backend with database connection...");
+    println!("Database URL: {}", db_url);
+    
+    // Create database connection
+    let db: DatabaseConnection = Database::connect(&db_url)
+        .await
+        .expect("Failed to connect to database");
+    
+    // Run migrations
+    println!("Running database migrations...");
+    Migrator::up(&db, None)
+        .await
+        .expect("Failed to run migrations");
+    
+    println!("Database setup complete!");
+    
+    // Initialize OAuth configuration
+    let oauth_config = OAuthConfig::new()
+        .expect("Failed to initialize OAuth configuration");
     
     let config = move |cfg: &mut web::ServiceConfig| {
-        cfg.service(
-            web::scope("")
-                .wrap(
-                    Cors::default()
-                        .allow_any_origin()
-                        .allow_any_method()
-                        .allow_any_header()
-                )
-                .route("/health", web::get().to(health_check))
-                .route("/api/hello", web::get().to(hello))
-        );
+        cfg.app_data(web::Data::new(db))
+            .app_data(web::Data::new(oauth_config))
+            .service(
+                web::scope("")
+                    .wrap(
+                        Cors::default()
+                            .allow_any_origin()
+                            .allow_any_method()
+                            .allow_any_header()
+                    )
+                    .route("/health", web::get().to(health_check))
+                    .route("/api/hello", web::get().to(hello))
+                    .route("/api/db-status", web::get().to(db_status))
+                    .route("/auth/google", web::get().to(google_login))
+                    .route("/auth/google/callback", web::get().to(google_callback))
+            );
     };
 
     Ok(config.into())

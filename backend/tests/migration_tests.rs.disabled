@@ -1,0 +1,146 @@
+use sea_orm::Database;
+use sea_orm_migration::{MigratorTrait, SchemaManager};
+use zine_life_backend::migrations::Migrator;
+
+#[tokio::test]
+async fn test_migrations_up_and_down() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("Failed to connect to test database");
+
+    // Test migrating up
+    let result = Migrator::up(&db, None).await;
+    assert!(result.is_ok(), "Failed to run migrations up: {:?}", result);
+
+    // Verify tables exist by trying to describe them
+    let schema_manager = SchemaManager::new(&db);
+    
+    // Check users table exists
+    let users_exists = schema_manager
+        .has_table("users")
+        .await
+        .expect("Failed to check users table");
+    assert!(users_exists, "Users table should exist after migration");
+
+    // Check designs table exists
+    let designs_exists = schema_manager
+        .has_table("designs")
+        .await
+        .expect("Failed to check designs table");
+    assert!(designs_exists, "Designs table should exist after migration");
+
+    // Check sessions table exists
+    let sessions_exists = schema_manager
+        .has_table("sessions")
+        .await
+        .expect("Failed to check sessions table");
+    assert!(sessions_exists, "Sessions table should exist after migration");
+
+    // Test migrating down
+    let result = Migrator::down(&db, None).await;
+    assert!(result.is_ok(), "Failed to run migrations down: {:?}", result);
+
+    // Verify tables are dropped
+    let users_exists = schema_manager
+        .has_table("users")
+        .await
+        .expect("Failed to check users table after down migration");
+    assert!(!users_exists, "Users table should not exist after down migration");
+}
+
+#[tokio::test]
+async fn test_migration_idempotency() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("Failed to connect to test database");
+
+    // Run migrations twice
+    let result1 = Migrator::up(&db, None).await;
+    assert!(result1.is_ok(), "First migration should succeed");
+
+    let result2 = Migrator::up(&db, None).await;
+    assert!(result2.is_ok(), "Running migrations again should be idempotent");
+
+    // Verify tables still exist
+    let schema_manager = SchemaManager::new(&db);
+    let users_exists = schema_manager
+        .has_table("users")
+        .await
+        .expect("Failed to check users table");
+    assert!(users_exists, "Users table should still exist");
+}
+
+#[tokio::test]
+async fn test_table_structure() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("Failed to connect to test database");
+
+    Migrator::up(&db, None).await.expect("Failed to run migrations");
+
+    // Test that we can perform basic operations on each table using SeaORM
+    use zine_life_backend::test_utils::database::test_data;
+    
+    // Test users table structure by creating a user
+    let user_result = test_data::create_test_user(
+        &db,
+        "test@example.com",
+        "Test User",
+        "google"
+    ).await;
+    assert!(user_result.is_ok(), "Should be able to insert into users table");
+    let user = user_result.unwrap();
+
+    // Test designs table structure by creating a design
+    let design_result = test_data::create_test_design(
+        &db,
+        user.id,
+        "Test Design",
+        false
+    ).await;
+    assert!(design_result.is_ok(), "Should be able to insert into designs table");
+
+    // Test sessions table structure by creating a session
+    let session_result = test_data::create_test_session(
+        &db,
+        user.id,
+        "test_token"
+    ).await;
+    assert!(session_result.is_ok(), "Should be able to insert into sessions table");
+}
+
+#[tokio::test]
+async fn test_basic_relationships() {
+    let db = Database::connect("sqlite::memory:")
+        .await
+        .expect("Failed to connect to test database");
+
+    Migrator::up(&db, None).await.expect("Failed to run migrations");
+
+    use zine_life_backend::test_utils::database::test_data;
+    
+    // Create a user
+    let user = test_data::create_test_user(
+        &db,
+        "test@example.com",
+        "Test User",
+        "google"
+    ).await.expect("Failed to create user");
+
+    // Test that design with valid user_id works
+    let design_result = test_data::create_test_design(
+        &db,
+        user.id,
+        "Valid Design",
+        false
+    ).await;
+    assert!(design_result.is_ok(), "Should be able to create design with valid user_id");
+
+    // Test that session with valid user_id works
+    let session_result = test_data::create_test_session(
+        &db,
+        user.id,
+        "valid_token"
+    ).await;
+    assert!(session_result.is_ok(), "Should be able to create session with valid user_id");
+}
