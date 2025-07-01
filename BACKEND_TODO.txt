@@ -1,0 +1,142 @@
+# Zine Life - Backend & Authentication Implementation Plan
+
+## Project Architecture Changes
+- [ ] Restructure project to separate frontend and backend
+- [ ] Frontend: Move current Svelte app to `/frontend` directory
+- [ ] Backend: Create Rust API server in `/backend` directory
+- [ ] Database: PostgreSQL for production and development
+
+## Backend Infrastructure (Rust)
+### Core Setup
+- [ ] Initialize new Rust project with Cargo
+- [ ] Set up Actix-web framework
+- [ ] Set up SeaORM for database operations
+- [ ] Configure Neon PostgreSQL database connection
+- [ ] Set up database migrations with SeaORM
+- [ ] Set up CORS for frontend communication
+- [ ] Environment configuration (.env files)
+- [ ] Error handling and logging setup
+- [ ] Configure for Shuttle.rs deployment
+
+### Database Schema Design
+- [ ] Users table (id, email, name, avatar_url, provider, provider_id, created_at, updated_at)
+- [ ] Designs table (id, user_id, title, canvas_data, canvas_background, canvas_size, is_public, created_at, updated_at)
+  - Note: is_public defaults to false (private by default)
+  - User can make public when downloading/publishing
+- [ ] Sessions table (id, user_id, token, expires_at, created_at)
+- [ ] Design_shares table (optional - for sharing designs)
+
+### Authentication System
+- [ ] OAuth integration setup (oauth2 crate)
+- [ ] Google OAuth provider configuration
+- [ ] GitHub OAuth provider configuration
+- [ ] JWT token generation and validation
+- [ ] Session management middleware
+- [ ] Logout functionality
+- [ ] Token refresh mechanism
+
+### API Endpoints
+#### Authentication
+- [ ] GET /auth/google - Redirect to Google OAuth
+- [ ] GET /auth/github - Redirect to GitHub OAuth
+- [ ] GET /auth/callback/google - Handle Google OAuth callback
+- [ ] GET /auth/callback/github - Handle GitHub OAuth callback
+- [ ] POST /auth/logout - Logout user
+- [ ] GET /auth/me - Get current user info
+
+#### Designs/Zines
+- [ ] GET /api/designs - List user's designs (authenticated)
+- [ ] GET /api/designs/public - List public designs for homepage
+- [ ] GET /api/designs/:id - Get specific design
+- [ ] POST /api/designs - Create new design (authenticated)
+- [ ] PUT /api/designs/:id - Update design (authenticated, owner only)
+- [ ] DELETE /api/designs/:id - Delete design (authenticated, owner only)
+- [ ] POST /api/designs/:id/duplicate - Duplicate a public design
+
+#### Health & Info
+- [ ] GET /health - Health check endpoint
+- [ ] GET /api/stats - Public stats (total designs, users, etc.)
+
+## Frontend Changes
+### Project Structure
+- [ ] Move current Svelte app to subdirectory
+- [ ] Update build configuration for new structure
+- [ ] Set up API base URL configuration
+
+### New Components & Pages
+- [ ] Homepage component (like Canva)
+  - [ ] Hero section with app description
+  - [ ] Login buttons (Google, GitHub)
+  - [ ] Public designs gallery
+  - [ ] "Start Creating" button (redirects to login if not authenticated)
+- [ ] Login page/modal
+- [ ] User profile/account page
+- [ ] Design gallery page (user's own designs)
+
+### Homepage Design (Canva-inspired)
+- [ ] Clean, minimal header with logo and login button
+- [ ] Hero section: "Create Beautiful Zines" with CTA
+- [ ] Featured/Recent public designs grid
+- [ ] Simple footer
+- [ ] Responsive design for mobile/desktop
+
+### Authentication Flow
+- [ ] Auth store/context for user state
+- [ ] Protected routes (redirect to login if not authenticated)
+- [ ] Login redirect after authentication
+- [ ] Logout functionality
+- [ ] User avatar/name display in header
+
+### API Integration
+- [ ] HTTP client setup (fetch/axios)
+- [ ] API error handling
+- [ ] Loading states for API calls
+- [ ] Save design to backend when editing
+- [ ] Auto-save functionality (debounced)
+- [ ] Load design from backend
+- [ ] Design list/gallery integration
+
+## DevOps & Deployment
+- [ ] Shuttle.rs deployment configuration
+- [ ] Environment variable management for Shuttle.rs
+- [ ] Neon PostgreSQL database setup
+- [ ] Database migration scripts for production
+- [ ] Frontend build process updates (Vercel)
+- [ ] CORS configuration for production (Vercel frontend + Shuttle backend)
+- [ ] Rate limiting setup
+- [ ] Security headers
+
+## Security Considerations
+- [ ] CSRF protection
+- [ ] Input validation and sanitization
+- [ ] SQL injection prevention (SeaORM handles this)
+- [ ] Secure session management
+- [ ] Environment secrets management
+- [ ] HTTPS enforcement in production
+
+## Optional Future Features
+- [ ] Design collaboration (sharing edit access)
+- [ ] Design comments/feedback
+- [ ] Design templates/categories
+- [ ] User profiles with bio
+- [ ] Design likes/favorites
+- [ ] Export history tracking
+- [ ] Email notifications for shares
+
+## Testing
+- [ ] Backend unit tests
+- [ ] API integration tests
+- [ ] Frontend component tests
+- [ ] End-to-end authentication flow tests
+
+## Development Order Priority
+1. Backend infrastructure setup
+2. Database schema and migrations
+3. Basic authentication (Google OAuth first)
+4. User registration/login flow
+5. Design CRUD API endpoints
+6. Frontend homepage creation
+7. Frontend auth integration
+8. Design save/load integration
+9. Public designs gallery
+10. Polish and testing
