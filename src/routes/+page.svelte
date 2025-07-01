@@ -48,7 +48,6 @@
 	
 	// Handle stage ready callback
 	function handleStageReady(stage: any) {
-		console.log('Stage ready in main page:', stage);
 		stageRef = stage;
 	}
 	let editingTextId = $state<string | null>(null);
