@@ -1,38 +1,85 @@
-# sv
+# Zine Life - Digital Zine Creation Platform
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A modern web application for creating beautiful digital zines with an intuitive drag-and-drop interface.
 
-## Creating a project
+## Project Structure
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+```
+zine-life/
+├── frontend/          # Svelte frontend application
+│   ├── src/          # Svelte components and logic
+│   ├── static/       # Static assets
+│   └── package.json  # Frontend dependencies
+├── backend/          # Rust API server
+│   ├── src/          # Rust source code
+│   └── Cargo.toml    # Rust dependencies
+└── README.md         # This file
 ```
 
-## Developing
+## Tech Stack
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### Frontend
+- **Framework**: SvelteKit
+- **Canvas**: Konva.js for interactive drawing
+- **Styling**: TailwindCSS
+- **Build Tool**: Vite
+- **Package Manager**: Bun
 
+### Backend
+- **Language**: Rust (Edition 2024)
+- **Framework**: Actix-web
+- **Database**: PostgreSQL with SeaORM
+- **Authentication**: OAuth2 (Google, GitHub)
+- **Deployment**: Shuttle.rs
+
+## Development
+
+### Frontend
 ```bash
+cd frontend
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
+Frontend runs on http://localhost:5173
 
-## Building
-
-To create a production version of your app:
-
+### Backend
 ```bash
-npm run build
+cd backend
+cargo run
 ```
+Backend runs on http://localhost:8080
 
-You can preview the production build with `npm run preview`.
+## Features
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### Current Features
+- Interactive canvas with shapes, text, and images
+- Drag-and-drop editing
+- Undo/redo functionality
+- Export to PNG, JPG, SVG formats
+- Real-time design editing
+
+### Planned Features
+- User authentication (Google, GitHub OAuth)
+- Save/load designs from cloud
+- Public design gallery
+- Design sharing and collaboration
+- Template system
+
+## API Endpoints
+
+### Health & Info
+- `GET /health` - Health check
+- `GET /api/hello` - Test endpoint
+
+### Authentication (Planned)
+- `GET /auth/google` - Google OAuth redirect
+- `GET /auth/github` - GitHub OAuth redirect
+- `GET /auth/callback/{provider}` - OAuth callbacks
+- `POST /auth/logout` - User logout
+
+### Designs (Planned)
+- `GET /api/designs` - User's private designs
+- `GET /api/designs/public` - Public design gallery
+- `POST /api/designs` - Create new design
+- `PUT /api/designs/:id` - Update design
+- `DELETE /api/designs/:id` - Delete design
