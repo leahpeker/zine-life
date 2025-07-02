@@ -1,0 +1,1 @@
+import{c as e,a as m}from"../chunks/CcV_VuSo.js";import{p as n,o as p,f as s,a as i}from"../chunks/DJyLtpc6.js";import{s as c}from"../chunks/DNe1EnZt.js";import{a as f}from"../chunks/Btvs6HVG.js";function v(t,a){n(a,!0),p(()=>{f.checkAuth()});var o=e(),r=s(o);c(r,()=>a.children),m(t,o),i()}export{v as component};
