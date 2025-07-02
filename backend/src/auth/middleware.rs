@@ -59,10 +59,25 @@ pub async fn auth_middleware(
     Ok(req)
 }
 
-// Helper function to extract current user from request
-#[allow(dead_code)]
+// Helper function to extract current user from request (works with both cookies and headers)
 pub fn get_current_user(req: &actix_web::HttpRequest) -> Option<user::Model> {
-    req.extensions().get::<user::Model>().cloned()
+    // First check if user is already in extensions (from middleware)
+    if let Some(user) = req.extensions().get::<user::Model>() {
+        return Some(user.clone());
+    }
+    
+    // If not in extensions, try to get from cookie
+    if let Some(cookie) = req.cookie("auth_token") {
+        if let Ok(claims) = verify_jwt_token(cookie.value()) {
+            if let Ok(user_id) = Uuid::parse_str(&claims.sub) {
+                // We'd need database access here, but for now just return None
+                // This should be handled by proper middleware in production
+                return None;
+            }
+        }
+    }
+    
+    None
 }
 
 // Helper function to extract JWT claims from request

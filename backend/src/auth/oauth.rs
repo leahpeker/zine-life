@@ -39,6 +39,25 @@ pub struct OAuthConfig {
 }
 
 impl OAuthConfig {
+    pub fn from_secrets(secrets: &shuttle_runtime::SecretStore) -> Result<Self, Box<dyn std::error::Error>> {
+        let google_client_id = secrets.get("GOOGLE_CLIENT_ID")
+            .ok_or("GOOGLE_CLIENT_ID must be set")?;
+        let google_client_secret = secrets.get("GOOGLE_CLIENT_SECRET")
+            .ok_or("GOOGLE_CLIENT_SECRET must be set")?;
+        let redirect_url = secrets.get("GOOGLE_REDIRECT_URL")
+            .unwrap_or_else(|| "http://localhost:8000/auth/google/callback".to_string());
+
+        let google_client = BasicClient::new(
+            ClientId::new(google_client_id),
+            Some(ClientSecret::new(google_client_secret)),
+            AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
+            Some(TokenUrl::new("https://www.googleapis.com/oauth2/v4/token".to_string())?),
+        )
+        .set_redirect_uri(RedirectUrl::new(redirect_url)?);
+
+        Ok(Self { google_client })
+    }
+
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let google_client_id = std::env::var("GOOGLE_CLIENT_ID")
             .expect("GOOGLE_CLIENT_ID must be set");
@@ -157,15 +176,17 @@ pub async fn google_callback(
     session.insert(db.as_ref()).await
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create session: {}", e)))?;
 
-    let response = AuthResponse {
-        token: jwt_token,
-        user: UserResponse {
-            id: user_model.id.to_string(),
-            email: user_model.email,
-            name: user_model.name,
-            avatar_url: user_model.avatar_url,
-        },
-    };
-
-    Ok(HttpResponse::Ok().json(response))
+    // Set JWT as HTTP-only cookie and redirect to frontend
+    Ok(HttpResponse::Found()
+        .cookie(
+            actix_web::cookie::Cookie::build("auth_token", jwt_token.clone())
+                .http_only(true)
+                .secure(false) // Set to true in production with HTTPS
+                .same_site(actix_web::cookie::SameSite::Lax)
+                .path("/")
+                .max_age(actix_web::cookie::time::Duration::days(30))
+                .finish()
+        )
+        .append_header(("Location", "http://localhost:5173"))
+        .finish())
 }

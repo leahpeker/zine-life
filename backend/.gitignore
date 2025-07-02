@@ -1,0 +1,33 @@
+# Rust
+/target/
+Cargo.lock
+
+# Environment files - NEVER COMMIT THESE
+.env
+.env.local
+.env.production
+
+# Shuttle secrets
+Secrets.toml
+Secrets.dev.toml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Shuttle deployment
+.shuttle/

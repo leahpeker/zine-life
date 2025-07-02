@@ -41,6 +41,7 @@ async fn db_status(_db: web::Data<DatabaseConnection>) -> Result<HttpResponse> {
 #[shuttle_runtime::main]
 async fn main(
     #[shuttle_shared_db::Postgres] db_url: String,
+    #[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
 ) -> ShuttleActixWeb<impl FnOnce(&mut web::ServiceConfig) + Send + Clone + 'static> {
     println!("Starting Zine Life Backend with database connection...");
     println!("Database URL: {}", db_url);
@@ -58,8 +59,8 @@ async fn main(
     
     println!("Database setup complete!");
     
-    // Initialize OAuth configuration
-    let oauth_config = OAuthConfig::new()
+    // Initialize OAuth configuration with secrets
+    let oauth_config = OAuthConfig::from_secrets(&secrets)
         .expect("Failed to initialize OAuth configuration");
     
     let config = move |cfg: &mut web::ServiceConfig| {
