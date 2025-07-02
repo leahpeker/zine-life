@@ -66,6 +66,7 @@ async fn main(
     let config = move |cfg: &mut web::ServiceConfig| {
         cfg.app_data(web::Data::new(db))
             .app_data(web::Data::new(oauth_config))
+            .app_data(web::Data::new(secrets))
             .service(
                 web::scope("")
                     .wrap(

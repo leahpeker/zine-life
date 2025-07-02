@@ -58,6 +58,7 @@ impl OAuthConfig {
         Ok(Self { google_client })
     }
 
+    #[allow(dead_code)]
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let google_client_id = std::env::var("GOOGLE_CLIENT_ID")
             .expect("GOOGLE_CLIENT_ID must be set");
@@ -177,6 +178,9 @@ pub async fn google_callback(
         .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create session: {}", e)))?;
 
     // Set JWT as HTTP-only cookie and redirect to frontend
+    let frontend_url = std::env::var("FRONTEND_URL")
+        .unwrap_or_else(|_| "http://localhost:5173".to_string());
+    
     Ok(HttpResponse::Found()
         .cookie(
             actix_web::cookie::Cookie::build("auth_token", jwt_token.clone())
@@ -187,6 +191,6 @@ pub async fn google_callback(
                 .max_age(actix_web::cookie::time::Duration::days(30))
                 .finish()
         )
-        .append_header(("Location", "http://localhost:5173"))
+        .append_header(("Location", frontend_url))
         .finish())
 }

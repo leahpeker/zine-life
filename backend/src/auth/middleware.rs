@@ -69,7 +69,7 @@ pub fn get_current_user(req: &actix_web::HttpRequest) -> Option<user::Model> {
     // If not in extensions, try to get from cookie
     if let Some(cookie) = req.cookie("auth_token") {
         if let Ok(claims) = verify_jwt_token(cookie.value()) {
-            if let Ok(user_id) = Uuid::parse_str(&claims.sub) {
+            if let Ok(_user_id) = Uuid::parse_str(&claims.sub) {
                 // We'd need database access here, but for now just return None
                 // This should be handled by proper middleware in production
                 return None;
