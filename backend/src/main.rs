@@ -8,6 +8,7 @@ mod entities;
 mod migrations;
 mod auth;
 mod handlers;
+mod constants;
 
 #[cfg(test)]
 mod test_utils;
@@ -15,11 +16,16 @@ mod test_utils;
 use migrations::Migrator;
 use auth::{OAuthConfig, google_login, google_callback};
 use handlers::{designs, auth as auth_handlers};
+use constants::{
+    api_routes::ApiRoutes,
+    cors::{COMMON_METHODS, COMMON_HEADERS, AllowedOrigins},
+    errors::{StatusMessages, ServiceNames}
+};
 
 async fn health_check() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
-        "status": "healthy",
-        "service": "zine-life-backend"
+        "status": StatusMessages::HEALTHY,
+        "service": ServiceNames::BACKEND
     })))
 }
 
@@ -32,9 +38,9 @@ async fn hello() -> Result<HttpResponse> {
 async fn db_status(_db: web::Data<DatabaseConnection>) -> Result<HttpResponse> {
     // Simple database status check
     Ok(HttpResponse::Ok().json(serde_json::json!({
-        "database": "connected",
-        "backend": "PostgreSQL",
-        "status": "healthy"
+        "database": StatusMessages::CONNECTED,
+        "backend": ServiceNames::DATABASE,
+        "status": StatusMessages::HEALTHY
     })))
 }
 
@@ -71,25 +77,28 @@ async fn main(
                 web::scope("")
                     .wrap(
                         Cors::default()
-                            .allow_any_origin()
-                            .allow_any_method()
-                            .allow_any_header()
+                            .allowed_origin(AllowedOrigins::LOCALHOST_5173)
+                            .allowed_origin(AllowedOrigins::LOCALHOST_127_5173)
+                            .allowed_methods(COMMON_METHODS)
+                            .allowed_headers(COMMON_HEADERS)
+                            .supports_credentials()
+                            .max_age(3600)
                     )
-                    .route("/health", web::get().to(health_check))
-                    .route("/api/hello", web::get().to(hello))
-                    .route("/api/db-status", web::get().to(db_status))
+                    .route(ApiRoutes::HEALTH, web::get().to(health_check))
+                    .route(ApiRoutes::API_HELLO, web::get().to(hello))
+                    .route(ApiRoutes::API_DB_STATUS, web::get().to(db_status))
                     // Auth routes
-                    .route("/auth/google", web::get().to(google_login))
-                    .route("/auth/google/callback", web::get().to(google_callback))
-                    .route("/api/auth/me", web::get().to(auth_handlers::get_current_user_info))
-                    .route("/api/auth/logout", web::post().to(auth_handlers::logout))
+                    .route(ApiRoutes::AUTH_GOOGLE, web::get().to(google_login))
+                    .route(ApiRoutes::AUTH_GOOGLE_CALLBACK, web::get().to(google_callback))
+                    .route(ApiRoutes::API_AUTH_ME, web::get().to(auth_handlers::get_current_user_info))
+                    .route(ApiRoutes::API_AUTH_LOGOUT, web::post().to(auth_handlers::logout))
                     // Design routes
-                    .route("/api/designs", web::get().to(designs::list_designs))
-                    .route("/api/designs", web::post().to(designs::create_design))
-                    .route("/api/designs/public", web::get().to(designs::list_public_designs))
-                    .route("/api/designs/{id}", web::get().to(designs::get_design))
-                    .route("/api/designs/{id}", web::put().to(designs::update_design))
-                    .route("/api/designs/{id}", web::delete().to(designs::delete_design))
+                    .route(ApiRoutes::API_DESIGNS, web::get().to(designs::list_designs))
+                    .route(ApiRoutes::API_DESIGNS, web::post().to(designs::create_design))
+                    .route(ApiRoutes::API_DESIGNS_PUBLIC, web::get().to(designs::list_public_designs))
+                    .route(ApiRoutes::API_DESIGNS_BY_ID, web::get().to(designs::get_design))
+                    .route(ApiRoutes::API_DESIGNS_BY_ID, web::put().to(designs::update_design))
+                    .route(ApiRoutes::API_DESIGNS_BY_ID, web::delete().to(designs::delete_design))
             );
     };
 
