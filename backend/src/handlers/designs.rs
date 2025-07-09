@@ -65,8 +65,8 @@ impl From<(design::Model, Option<user::Model>)> for DesignResponse {
             canvas_background: design.canvas_background,
             canvas_size: design.canvas_size,
             is_public: design.is_public,
-            created_at: design.created_at.to_string(),
-            updated_at: design.updated_at.to_string(),
+            created_at: design.created_at.format(&time::format_description::well_known::Rfc3339).unwrap_or_else(|_| design.created_at.to_string()),
+            updated_at: design.updated_at.format(&time::format_description::well_known::Rfc3339).unwrap_or_else(|_| design.updated_at.to_string()),
             user: user.map(|u| UserInfo {
                 id: u.id.to_string(),
                 name: u.name,
