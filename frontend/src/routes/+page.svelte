@@ -2,18 +2,22 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { authStore, authService } from '$lib/stores/auth';
-	import UserDropdown from '$lib/components/auth/UserDropdown.svelte';
+	import Header from '$lib/components/layout/Header.svelte';
+	import { buildApiUrl, API_ENDPOINTS } from '$lib/constants/api';
+	import { ROUTES } from '$lib/constants/routes';
+	import { UI_TEXT } from '$lib/constants/ui-text';
+	import SimpleThumbnail from '$lib/components/design/SimpleThumbnail.svelte';
 
 	let recentDesigns = [];
 	let publicDesigns = [];
 	let loading = false;
 
 	function startNewDesign() {
-		goto('/editor');
+		goto(ROUTES.EDITOR);
 	}
 
 	function goToDashboard() {
-		goto('/dashboard');
+		goto(ROUTES.DASHBOARD);
 	}
 
 	function signIn() {
@@ -26,13 +30,14 @@
 		
 		try {
 			loading = true;
-			const response = await fetch('http://localhost:8000/api/designs', {
+			const designsUrl = buildApiUrl(API_ENDPOINTS.DESIGNS.BASE);
+			const response = await fetch(designsUrl, {
 				credentials: 'include'
 			});
 			
 			if (response.ok) {
-				const designs = await response.json();
-				recentDesigns = designs.slice(0, 3); // Show only 3 most recent
+				const data = await response.json();
+				recentDesigns = (data.designs || []).slice(0, 3); // Show only 3 most recent
 			}
 		} catch (error) {
 			console.error('Failed to fetch recent designs:', error);
@@ -43,11 +48,12 @@
 
 	async function fetchPublicDesigns() {
 		try {
-			const response = await fetch('http://localhost:8000/api/designs/public');
+			const publicUrl = buildApiUrl(API_ENDPOINTS.DESIGNS.PUBLIC);
+			const response = await fetch(publicUrl);
 			
 			if (response.ok) {
-				const designs = await response.json();
-				publicDesigns = designs.slice(0, 6); // Show 6 public designs
+				const data = await response.json();
+				publicDesigns = (data.designs || []).slice(0, 6); // Show 6 public designs
 			}
 		} catch (error) {
 			console.error('Failed to fetch public designs:', error);
@@ -71,43 +77,16 @@
 </svelte:head>
 
 <!-- Header -->
-<header class="bg-black border-b-2 border-green-400 sticky top-0 z-50">
-	<div class="max-w-4xl mx-auto px-4 py-3">
-		<div class="flex justify-between items-center">
-			<!-- Logo -->
-			<div class="flex items-center">
-				<h1 class="text-3xl font-black text-white tracking-wider transform -skew-x-12 font-punk">ZINE LIFE</h1>
-			</div>
+<Header />
 
-			<!-- Auth Section -->
-			<div class="flex items-center space-x-4">
-				{#if $authStore.loading}
-					<div class="text-green-400 font-mono text-sm">loading...</div>
-				{:else if $authStore.user}
-					<UserDropdown user={$authStore.user} />
-				{:else}
-					<button 
-						type="button"
-						onclick={signIn}
-						class="bg-green-400 text-black px-4 py-2 font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-2 border-green-400 font-industrial"
-						aria-label="Sign in with Google"
-					>
-						LOGIN
-					</button>
-				{/if}
-			</div>
-		</div>
-	</div>
-</header>
-
-<main class="bg-black min-h-screen photocopied scan-lines relative">
+<main class="bg-black min-h-screen photocopied scan-lines relative" style="margin-top: 64px;">
 	{#if $authStore.user}
 		<!-- Logged-in User View: Personal Dashboard -->
 		<section class="bg-black py-12 px-4">
 			<div class="max-w-6xl mx-auto">
 				<div class="mb-12">
 					<h1 class="text-4xl md:text-6xl font-black text-white mb-4 tracking-wider transform -skew-x-6 font-punk">
-						WELCOME BACK, {$authStore.user.name.toUpperCase()}
+						{UI_TEXT.HEADINGS.WELCOME_BACK($authStore.user.name)}
 					</h1>
 					<p class="text-xl text-green-400 font-mono">Ready to create more underground graphics?</p>
 				</div>
@@ -155,14 +134,15 @@
 						<ul class="grid grid-cols-1 md:grid-cols-3 gap-6" role="list" aria-label="Recent designs">
 							{#each recentDesigns as design}
 								<li class="border-2 border-gray-800 bg-gray-900 p-4 hover:border-green-400 transition-colors photocopied">
-									<div class="bg-gray-800 h-40 mb-4 flex items-center justify-center">
-										<div class="text-gray-600 font-mono text-sm">DESIGN PREVIEW</div>
+									<div class="h-40 mb-4 flex items-center justify-center bg-gray-800">
+										<SimpleThumbnail {design} size="medium" className="bg-white" />
 									</div>
 									<h3 class="text-lg font-black text-white mb-2 font-industrial">{design.title}</h3>
 									<p class="text-gray-400 font-mono text-xs mb-3">
 										{new Date(design.updated_at).toLocaleDateString()}
 									</p>
 									<button 
+										onclick={() => goto(`/editor?id=${design.id}`)}
 										class="bg-transparent text-green-400 px-4 py-1 text-sm font-black border border-green-400 hover:bg-green-400 hover:text-black transition-colors font-industrial"
 										aria-label="Edit {design.title}"
 									>
@@ -262,7 +242,7 @@
 					{#each publicDesigns as design}
 						<li class="border-2 border-gray-800 bg-gray-900 hover:border-green-400 transition-colors photocopied">
 							<div class="bg-gray-800 h-48 flex items-center justify-center">
-								<div class="text-gray-600 font-mono text-sm">PUBLIC DESIGN</div>
+								<SimpleThumbnail {design} size="large" className="bg-white" />
 							</div>
 							<div class="p-4">
 								<h3 class="text-lg font-black text-white mb-2 font-industrial">{design.title}</h3>

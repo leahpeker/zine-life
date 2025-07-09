@@ -2,11 +2,19 @@
 	import { authStore, authService } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import Header from '$lib/components/layout/Header.svelte';
+	import { buildApiUrl, API_ENDPOINTS } from '$lib/constants/api';
+	import { FETCH_OPTIONS } from '$lib/constants/http';
+	import { DESIGN_FILTERS, FILTER_CONFIG, type DesignFilter } from '$lib/constants/filters';
+	import { ROUTES } from '$lib/constants/routes';
+	import { UI_TEXT } from '$lib/constants/ui-text';
+	import SimpleThumbnail from '$lib/components/design/SimpleThumbnail.svelte';
 
 	let designs = [];
 	let loading = true;
 	let error = null;
-	let filter = 'all'; // 'all', 'private', 'public'
+	let filter: DesignFilter = DESIGN_FILTERS.ALL;
+	let hasInitiallyFetched = false;
 
 	// Redirect to home if not authenticated
 	onMount(() => {
@@ -17,8 +25,8 @@
 		}
 	});
 
-	// Fetch designs when user becomes authenticated
-	$: if ($authStore.user && designs.length === 0) {
+	// Fetch designs when user becomes authenticated (only once)
+	$: if ($authStore.user && !hasInitiallyFetched) {
 		fetchDesigns();
 	}
 
@@ -28,12 +36,12 @@
 		try {
 			loading = true;
 			error = null;
-			const response = await fetch('http://localhost:8000/api/designs', {
-				credentials: 'include'
-			});
+			const designsUrl = buildApiUrl(API_ENDPOINTS.DESIGNS.BASE);
+			const response = await fetch(designsUrl, FETCH_OPTIONS.DEFAULT);
 			
 			if (response.ok) {
-				designs = await response.json();
+				const data = await response.json();
+				designs = data.designs || [];
 			} else {
 				error = 'Failed to fetch designs';
 			}
@@ -42,18 +50,20 @@
 			console.error('Failed to fetch designs:', err);
 		} finally {
 			loading = false;
+			hasInitiallyFetched = true;
 		}
 	}
 
 	async function deleteDesign(id) {
-		if (!confirm('Are you sure you want to delete this design? This action cannot be undone.')) {
+		if (!confirm(UI_TEXT.MESSAGES.DELETE_CONFIRM)) {
 			return;
 		}
 
 		try {
-			const response = await fetch(`http://localhost:8000/api/designs/${id}`, {
+			const deleteUrl = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(id));
+			const response = await fetch(deleteUrl, {
 				method: 'DELETE',
-				credentials: 'include'
+				...FETCH_OPTIONS.DEFAULT
 			});
 
 			if (response.ok) {
@@ -68,18 +78,23 @@
 	}
 
 	function editDesign(id) {
-		goto(`/editor?id=${id}`);
+		goto(ROUTES.EDITOR_WITH_ID(id));
 	}
 
 	function newDesign() {
-		goto('/editor');
+		goto(ROUTES.EDITOR);
+	}
+
+	function refreshDesigns() {
+		hasInitiallyFetched = false;
+		fetchDesigns();
 	}
 
 	// Filter designs based on current filter
 	$: filteredDesigns = designs.filter(design => {
-		if (filter === 'all') return true;
-		if (filter === 'public') return design.is_public;
-		if (filter === 'private') return !design.is_public;
+		if (filter === DESIGN_FILTERS.ALL) return true;
+		if (filter === DESIGN_FILTERS.PUBLIC) return design.is_public;
+		if (filter === DESIGN_FILTERS.PRIVATE) return !design.is_public;
 		return true;
 	});
 </script>
@@ -88,8 +103,11 @@
 	<title>Dashboard - ZINE LIFE</title>
 </svelte:head>
 
+<!-- Header -->
+<Header showBackButton={true} />
+
 <!-- Dashboard -->
-<div class="min-h-screen bg-black text-white photocopied scan-lines">
+<div class="min-h-screen bg-black text-white photocopied scan-lines" style="margin-top: 64px;">
 	<div class="max-w-6xl mx-auto px-4 py-8">
 		<!-- Header -->
 		<div class="mb-8">
@@ -114,30 +132,16 @@
 
 			<!-- Filter Buttons -->
 			<div class="flex gap-2">
-				<button 
-					onclick={() => filter = 'all'}
-					class="px-4 py-2 font-black tracking-wide border-2 font-industrial transition-colors {filter === 'all' ? 'bg-green-400 text-black border-green-400' : 'bg-transparent text-green-400 border-green-400 hover:bg-green-400 hover:text-black'}"
-					aria-label="Show all designs"
-					aria-pressed={filter === 'all'}
-				>
-					ALL
-				</button>
-				<button 
-					onclick={() => filter = 'private'}
-					class="px-4 py-2 font-black tracking-wide border-2 font-industrial transition-colors {filter === 'private' ? 'bg-green-400 text-black border-green-400' : 'bg-transparent text-green-400 border-green-400 hover:bg-green-400 hover:text-black'}"
-					aria-label="Show only private designs"
-					aria-pressed={filter === 'private'}
-				>
-					PRIVATE
-				</button>
-				<button 
-					onclick={() => filter = 'public'}
-					class="px-4 py-2 font-black tracking-wide border-2 font-industrial transition-colors {filter === 'public' ? 'bg-green-400 text-black border-green-400' : 'bg-transparent text-green-400 border-green-400 hover:bg-green-400 hover:text-black'}"
-					aria-label="Show only public designs"
-					aria-pressed={filter === 'public'}
-				>
-					PUBLIC
-				</button>
+				{#each Object.entries(FILTER_CONFIG) as [filterKey, config]}
+					<button 
+						onclick={() => filter = filterKey}
+						class="px-4 py-2 font-black tracking-wide border-2 font-industrial transition-colors {filter === filterKey ? 'bg-green-400 text-black border-green-400' : 'bg-transparent text-green-400 border-green-400 hover:bg-green-400 hover:text-black'}"
+						aria-label={config.ariaLabel}
+						aria-pressed={filter === filterKey}
+					>
+						{config.label}
+					</button>
+				{/each}
 			</div>
 		</div>
 
@@ -152,7 +156,7 @@
 			<div class="text-center py-16">
 				<div class="text-red-400 font-mono text-xl mb-4">{error}</div>
 				<button 
-					onclick={fetchDesigns}
+					onclick={refreshDesigns}
 					class="bg-green-400 text-black px-6 py-2 font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-2 border-green-400 font-industrial"
 					aria-label="Retry loading designs"
 				>
@@ -165,12 +169,10 @@
 			<div class="text-center py-16 border-2 border-gray-800 bg-gray-900">
 				<div class="text-green-400 text-6xl mb-4">[+]</div>
 				<h2 class="text-2xl font-black text-white mb-4 font-industrial">
-					{filter === 'all' ? 'NO DESIGNS YET' : filter === 'private' ? 'NO PRIVATE DESIGNS' : 'NO PUBLIC DESIGNS'}
+					{UI_TEXT.MESSAGES.EMPTY_STATE_TITLE(filter)}
 				</h2>
 				<p class="text-gray-400 font-mono mb-6">
-					{filter === 'all' ? 'Time to create your first underground masterpiece' : 
-					 filter === 'private' ? 'All your designs are public' : 
-					 'None of your designs are public yet'}
+					{UI_TEXT.MESSAGES.EMPTY_STATE_DESCRIPTION(filter)}
 				</p>
 				<button 
 					onclick={newDesign}
@@ -188,7 +190,7 @@
 					<li class="border-2 border-gray-800 bg-gray-900 hover:border-green-400 transition-colors photocopied">
 						<!-- Design Preview -->
 						<div class="bg-gray-800 h-48 flex items-center justify-center relative">
-							<div class="text-gray-600 font-mono text-sm">DESIGN PREVIEW</div>
+							<SimpleThumbnail {design} size="large" className="bg-white" />
 							
 							<!-- Privacy Badge -->
 							<div class="absolute top-2 right-2">

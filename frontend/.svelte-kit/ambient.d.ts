@@ -26,14 +26,15 @@
  * ```
  */
 declare module '$env/static/private' {
+	export const CLAUDE_CODE_ENTRYPOINT: string;
 	export const TERM_PROGRAM: string;
 	export const NODE: string;
 	export const INIT_CWD: string;
 	export const TERM: string;
 	export const SHELL: string;
 	export const CLICOLOR: string;
-	export const HOMEBREW_REPOSITORY: string;
 	export const TMPDIR: string;
+	export const HOMEBREW_REPOSITORY: string;
 	export const npm_config_global_prefix: string;
 	export const TERM_PROGRAM_VERSION: string;
 	export const COLOR: string;
@@ -41,6 +42,7 @@ declare module '$env/static/private' {
 	export const npm_config_noproxy: string;
 	export const npm_config_local_prefix: string;
 	export const ZSH: string;
+	export const GIT_EDITOR: string;
 	export const USER: string;
 	export const LS_COLORS: string;
 	export const npm_config_globalconfig: string;
@@ -58,6 +60,7 @@ declare module '$env/static/private' {
 	export const npm_command: string;
 	export const PWD: string;
 	export const npm_lifecycle_event: string;
+	export const OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: string;
 	export const EDITOR: string;
 	export const npm_package_name: string;
 	export const LANG: string;
@@ -70,13 +73,15 @@ declare module '$env/static/private' {
 	export const SHLVL: string;
 	export const HOMEBREW_PREFIX: string;
 	export const npm_config_cache: string;
-	export const LESS: string;
 	export const LOGNAME: string;
+	export const LESS: string;
 	export const npm_lifecycle_script: string;
+	export const COREPACK_ENABLE_AUTO_PIN: string;
 	export const BUN_INSTALL: string;
 	export const npm_config_user_agent: string;
-	export const INFOPATH: string;
 	export const HOMEBREW_CELLAR: string;
+	export const INFOPATH: string;
+	export const CLAUDECODE: string;
 	export const npm_node_execpath: string;
 	export const npm_config_prefix: string;
 	export const NODE_ENV: string;
@@ -111,14 +116,15 @@ declare module '$env/static/public' {
  */
 declare module '$env/dynamic/private' {
 	export const env: {
+		CLAUDE_CODE_ENTRYPOINT: string;
 		TERM_PROGRAM: string;
 		NODE: string;
 		INIT_CWD: string;
 		TERM: string;
 		SHELL: string;
 		CLICOLOR: string;
-		HOMEBREW_REPOSITORY: string;
 		TMPDIR: string;
+		HOMEBREW_REPOSITORY: string;
 		npm_config_global_prefix: string;
 		TERM_PROGRAM_VERSION: string;
 		COLOR: string;
@@ -126,6 +132,7 @@ declare module '$env/dynamic/private' {
 		npm_config_noproxy: string;
 		npm_config_local_prefix: string;
 		ZSH: string;
+		GIT_EDITOR: string;
 		USER: string;
 		LS_COLORS: string;
 		npm_config_globalconfig: string;
@@ -143,6 +150,7 @@ declare module '$env/dynamic/private' {
 		npm_command: string;
 		PWD: string;
 		npm_lifecycle_event: string;
+		OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: string;
 		EDITOR: string;
 		npm_package_name: string;
 		LANG: string;
@@ -155,13 +163,15 @@ declare module '$env/dynamic/private' {
 		SHLVL: string;
 		HOMEBREW_PREFIX: string;
 		npm_config_cache: string;
-		LESS: string;
 		LOGNAME: string;
+		LESS: string;
 		npm_lifecycle_script: string;
+		COREPACK_ENABLE_AUTO_PIN: string;
 		BUN_INSTALL: string;
 		npm_config_user_agent: string;
-		INFOPATH: string;
 		HOMEBREW_CELLAR: string;
+		INFOPATH: string;
+		CLAUDECODE: string;
 		npm_node_execpath: string;
 		npm_config_prefix: string;
 		NODE_ENV: string;

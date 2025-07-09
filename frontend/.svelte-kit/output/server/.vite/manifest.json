@@ -8,6 +8,29 @@
       "_internal.js"
     ]
   },
+  "_CanvasThumbnail.js": {
+    "file": "chunks/CanvasThumbnail.js",
+    "name": "CanvasThumbnail",
+    "imports": [
+      "_index.js"
+    ]
+  },
+  "_Header.js": {
+    "file": "chunks/Header.js",
+    "name": "Header",
+    "imports": [
+      "_index.js",
+      "_client.js",
+      "_auth.js"
+    ]
+  },
+  "_auth.js": {
+    "file": "chunks/auth.js",
+    "name": "auth",
+    "imports": [
+      "_index2.js"
+    ]
+  },
   "_client.js": {
     "file": "chunks/client.js",
     "name": "client",
@@ -20,6 +43,10 @@
   "_exports.js": {
     "file": "chunks/exports.js",
     "name": "exports"
+  },
+  "_http.js": {
+    "file": "chunks/http.js",
+    "name": "http"
   },
   "_index.js": {
     "file": "chunks/index.js",
@@ -67,10 +94,11 @@
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
     "imports": [
-      "_index.js"
+      "_index.js",
+      "_auth.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.BauKUj4h.css"
+      "_app/immutable/assets/_layout.Dkv3rujw.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -81,7 +109,23 @@
     "imports": [
       "_index.js",
       "_client.js",
-      "_index2.js"
+      "_auth.js",
+      "_Header.js",
+      "_CanvasThumbnail.js"
+    ]
+  },
+  "src/routes/dashboard/+page.svelte": {
+    "file": "entries/pages/dashboard/_page.svelte.js",
+    "name": "entries/pages/dashboard/_page.svelte",
+    "src": "src/routes/dashboard/+page.svelte",
+    "isEntry": true,
+    "imports": [
+      "_index.js",
+      "_auth.js",
+      "_client.js",
+      "_Header.js",
+      "_http.js",
+      "_CanvasThumbnail.js"
     ]
   },
   "src/routes/editor/+page.svelte": {
@@ -91,7 +135,11 @@
     "isEntry": true,
     "imports": [
       "_index.js",
-      "_index2.js"
+      "_index2.js",
+      "_Header.js",
+      "_client.js",
+      "_http.js",
+      "_auth.js"
     ]
   }
 }

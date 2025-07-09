@@ -1,5 +1,6 @@
 import "clsx";
 import { C as pop, z as push } from "../../chunks/index.js";
+import "../../chunks/auth.js";
 function _layout($$payload, $$props) {
   push();
   let { children } = $$props;

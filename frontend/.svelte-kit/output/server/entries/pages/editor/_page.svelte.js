@@ -1,6 +1,7 @@
-import { M as current_component, z as push, N as attr_class, C as pop, O as stringify, P as attr_style, Q as bind_props, E as escape_html, R as ensure_array_like, I as attr, S as maybe_selected, D as getContext, T as copy_payload, U as assign_payload, G as store_get, J as unsubscribe_stores } from "../../../chunks/index.js";
+import { P as current_component, z as push, N as attr_class, C as pop, K as stringify, O as attr_style, Q as bind_props, E as escape_html, I as ensure_array_like, J as attr, R as maybe_selected, D as getContext, S as copy_payload, T as assign_payload, F as store_get, M as unsubscribe_stores } from "../../../chunks/index.js";
 import { w as writable, g as get } from "../../../chunks/index2.js";
 import "clsx";
+import { P as PostPunkStyles, S as SaveStatus, a as SaveStatusText, U as UIStrings, c as SaveStatusColors, H as Header, L as LayoutDimensions, b as buildApiUrl, A as API_ENDPOINTS } from "../../../chunks/Header.js";
 import "konva";
 import { Arrow as Arrow$1 } from "konva/lib/shapes/Arrow.js";
 import { Circle as Circle$1 } from "konva/lib/shapes/Circle.js";
@@ -11,6 +12,9 @@ import { Shape as Shape$1 } from "konva/lib/Shape.js";
 import { Star as Star$1 } from "konva/lib/shapes/Star.js";
 import { Text as Text$1 } from "konva/lib/shapes/Text.js";
 import { Image as Image$1 } from "konva/lib/shapes/Image.js";
+import "../../../chunks/client.js";
+import { F as FETCH_OPTIONS } from "../../../chunks/http.js";
+import { a as authStore } from "../../../chunks/auth.js";
 function html(value) {
   var html2 = String(value ?? "");
   var open = "<!---->";
@@ -170,12 +174,12 @@ class ElementRegistryImpl {
 }
 const elementRegistry = new ElementRegistryImpl();
 const Colors = {
-  // Primary colors
+  // Post-Punk Brand Colors
   Black: "#000000",
   Gray: "#808080",
   // Common UI colors
   Transparent: "transparent",
-  // Default shape colors
+  // Default shape colors (keep existing for canvas)
   DefaultFill: "#ffa500",
   // Orange
   DefaultStroke: "#000000"
@@ -244,7 +248,7 @@ function CanvasSidebar($$payload, $$props) {
   elementRegistry.getByCategory(ElementCategories.Shapes);
   elementRegistry.getByCategory(ElementCategories.Text);
   elementRegistry.getByCategory(ElementCategories.Images);
-  $$payload.out += `<div class="flex h-full"><div class="flex w-20 flex-col bg-gray-50 border-r border-gray-200 h-full"><div class="flex-1 space-y-1 px-2 pt-4"><button${attr_class(`flex w-full flex-col items-center rounded-lg p-3 transition-all duration-200 ${stringify("text-gray-500 hover:bg-gray-50 hover:text-gray-700")}`)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg> <span class="text-xs font-medium">Shapes</span></button> <button${attr_class(`flex w-full flex-col items-center rounded-lg p-3 transition-all duration-200 ${stringify("text-gray-500 hover:bg-gray-50 hover:text-gray-700")}`)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> <span class="text-xs font-medium">Images</span></button> <button${attr_class(`flex w-full flex-col items-center rounded-lg p-3 transition-all duration-200 ${stringify("text-gray-500 hover:bg-gray-50 hover:text-gray-700")}`)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg> <span class="text-xs font-medium">Text</span></button></div> <div class="p-2 border-t border-gray-200"><button class="flex w-full flex-col items-center rounded-lg p-3 text-gray-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600"><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"></path></svg> <span class="text-xs font-medium">Clear</span></button></div></div> `;
+  $$payload.out += `<div class="flex h-full"><div${attr_class(PostPunkStyles.SidebarToolbox)}><div class="flex-1 space-y-1 px-2 pt-4"><button${attr_class(`${stringify(PostPunkStyles.SidebarButton)} ${stringify(PostPunkStyles.SidebarButtonInactive)}`)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg> <span>SHAPES</span></button> <button${attr_class(`${stringify(PostPunkStyles.SidebarButton)} ${stringify(PostPunkStyles.SidebarButtonInactive)}`)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> <span>IMAGES</span></button> <button${attr_class(`${stringify(PostPunkStyles.SidebarButton)} ${stringify(PostPunkStyles.SidebarButtonInactive)}`)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg> <span>TEXT</span></button></div> <div${attr_class(PostPunkStyles.SidebarTrashSection)}><button${attr_class(PostPunkStyles.SidebarTrashButton)}><svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"></path></svg> <span class="text-xs font-medium">Clear</span></button></div></div> `;
   {
     $$payload.out += "<!--[!-->";
   }
@@ -262,14 +266,15 @@ function EditBarComponent($$payload, $$props) {
     if (!selectedElement) return;
     onUpdateElement(selectedElement.id, { [property]: value });
   }
-  $$payload.out += `<div${attr_class(`h-full bg-gray-50 px-6 py-3 ${stringify(isVisible && selectedElement ? "border-b border-gray-200" : "")}`)}>`;
+  $$payload.out += `<div${attr_class(`h-full ${stringify(PostPunkStyles.PanelBg)} px-6 py-3 ${stringify(isVisible && selectedElement ? "border-b-2 border-green-400" : "")}`)}>`;
   if (isVisible && selectedElement) {
     $$payload.out += "<!--[-->";
     const editPanel = elementRegistry.getEditPanel(selectedElement.type, selectedElement.subType);
     if (editPanel) {
       $$payload.out += "<!--[-->";
+      const Component = editPanel.component;
       $$payload.out += `<div class="flex h-full items-center gap-6 overflow-x-auto"><div class="flex items-center gap-3 flex-shrink-0"><span class="text-purple-600">${html(editPanel.icon)}</span></div> <div class="h-6 w-px bg-gray-300 flex-shrink-0"></div> <div class="flex-1 min-w-0"><!---->`;
-      editPanel.component?.($$payload, {
+      Component($$payload, {
         element: selectedElement,
         updateProperty: handleUpdateProperty
       });
@@ -292,7 +297,7 @@ const ColorPickerType = {
 function ZineColorPicker($$payload, $$props) {
   push();
   let { value, onUpdate, type = ColorPickerType.Fill } = $$props;
-  $$payload.out += `<div class="relative flex items-center gap-2"><button type="button" class="h-8 w-8 rounded border border-gray-300 relative overflow-hidden transition-all hover:scale-105 focus:ring-2 focus:ring-purple-500 focus:outline-none flex items-center justify-center bg-white" aria-label="Choose color">`;
+  $$payload.out += `<div class="relative flex items-center gap-2"><button type="button" class="h-8 w-8 rounded border-2 border-green-400 relative overflow-hidden transition-all hover:scale-105 focus:ring-2 focus:ring-green-400 focus:outline-none flex items-center justify-center bg-gray-900" aria-label="Choose color">`;
   if (type === ColorPickerType.Fill) {
     $$payload.out += "<!--[-->";
     if (value === "transparent" || value === "#00000000") {
@@ -419,7 +424,7 @@ function CanvasSizeSelector($$payload, $$props) {
     const preset = presetSizes.find((size) => size.width === currentWidth && size.height === currentHeight);
     return preset ? preset.name : `${currentWidth} × ${currentHeight}`;
   };
-  $$payload.out += `<div class="relative"><button type="button" class="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M9 9h6v6H9z"></path></svg> <span class="max-w-32 truncate">${escape_html(currentSizeName())}</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"${attr_class(`transition-transform ${stringify("")}`)}><polyline points="6,9 12,15 18,9"></polyline></svg></button> `;
+  $$payload.out += `<div class="relative"><button type="button"${attr_class(PostPunkStyles.DropdownButton)}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M9 9h6v6H9z"></path></svg> <span class="max-w-32 truncate">${escape_html(currentSizeName())}</span> <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"${attr_class(`transition-transform ${stringify("")}`)}><polyline points="6,9 12,15 18,9"></polyline></svg></button> `;
   {
     $$payload.out += "<!--[!-->";
   }
@@ -459,12 +464,12 @@ function CanvasEditPanel($$payload, $$props) {
     currentWidth: canvasWidth,
     currentHeight: canvasHeight
   });
-  $$payload.out += `<!----> <div class="h-6 w-px bg-gray-200"></div> `;
+  $$payload.out += `<!----> <div${attr_class(PostPunkStyles.EditPanelDivider)}></div> `;
   ZineColorPicker($$payload, {
     value: backgroundColor,
     onUpdate: onUpdateBackground
   });
-  $$payload.out += `<!----> <div class="h-6 w-px bg-gray-200"></div> <button type="button"${attr_class(`flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${stringify(showGrid ? "text-gray-700" : "text-gray-400")}`)}${attr("aria-pressed", showGrid)} title="Toggle grid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="16" y2="21"></line><line x1="3" y1="8" x2="21" y2="8"></line><line x1="3" y1="16" x2="21" y2="16"></line></svg></button> <div class="h-6 w-px bg-gray-200"></div> <div class="flex items-center gap-2"><button type="button" class="flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"${attr("disabled", zoom <= 25, true)} title="Zoom out"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path><line x1="8" y1="11" x2="14" y2="11"></line></svg></button> <select class="rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-20">`;
+  $$payload.out += `<!----> <div${attr_class(PostPunkStyles.EditPanelDivider)}></div> <button type="button"${attr_class(`${stringify(PostPunkStyles.EditPanelIconButton)} ${stringify(showGrid ? "bg-green-400 text-black" : "")}`)}${attr("aria-pressed", showGrid)} title="Toggle grid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="16" y2="21"></line><line x1="3" y1="8" x2="21" y2="8"></line><line x1="3" y1="16" x2="21" y2="16"></line></svg></button> <div${attr_class(PostPunkStyles.EditPanelDivider)}></div> <div class="flex items-center gap-2"><button type="button"${attr_class(PostPunkStyles.EditPanelSmallButton)}${attr("disabled", zoom <= 25, true)} title="Zoom out" aria-label="Zoom out canvas"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path><line x1="8" y1="11" x2="14" y2="11"></line></svg></button> <select${attr_class(PostPunkStyles.EditPanelSelect)} aria-label="Canvas zoom level">`;
   $$payload.select_value = zoom;
   $$payload.out += `<!--[-->`;
   for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
@@ -473,7 +478,7 @@ function CanvasEditPanel($$payload, $$props) {
   }
   $$payload.out += `<!--]-->`;
   $$payload.select_value = void 0;
-  $$payload.out += `</select> <button type="button" class="flex h-6 w-6 items-center justify-center rounded border border-gray-300 bg-white text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"${attr("disabled", zoom >= 500, true)} title="Zoom in"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button></div> <div class="h-6 w-px bg-gray-200"></div> <button type="button" class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors" title="Fit to window"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg></button></div>`;
+  $$payload.out += `</select> <button type="button"${attr_class(PostPunkStyles.EditPanelSmallButton)}${attr("disabled", zoom >= 500, true)} title="Zoom in" aria-label="Zoom in canvas"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg></button></div> <div${attr_class(PostPunkStyles.EditPanelDivider)}></div> <button type="button"${attr_class(PostPunkStyles.EditPanelIconButton)} title="Fit to window" aria-label="Fit canvas to window"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg></button></div>`;
   pop();
 }
 const KONVA_EVENTS = [
@@ -1148,10 +1153,10 @@ function CanvasContainer($$payload, $$props) {
   function updateTransformer() {
     return;
   }
-  $$payload.out += `<div class="flex-1 overflow-auto"><div class="flex items-start justify-start"${attr_style(`padding: 48px; min-width: ${stringify(canvasWidth * (canvasZoom / 100) + 96)}px; min-height: ${stringify(canvasHeight * (canvasZoom / 100) + 96)}px; margin-top: 12px;`)}><div class="rounded-xl border border-gray-200 shadow-lg relative"${attr_style(`background-color: ${stringify(canvasBackgroundColor)}; width: ${stringify(canvasWidth * (canvasZoom / 100))}px; height: ${stringify(canvasHeight * (canvasZoom / 100))}px;`)}>`;
+  $$payload.out += `<div class="flex-1 overflow-auto"><div class="flex items-start justify-start"${attr_style(`padding: 48px; min-width: ${stringify(canvasWidth * (canvasZoom / 100) + 96)}px; min-height: ${stringify(canvasHeight * (canvasZoom / 100) + 96)}px;`)}><div class="border border-gray-200 shadow-lg relative"${attr_style(`background-color: ${stringify(canvasBackgroundColor)}; width: ${stringify(canvasWidth * (canvasZoom / 100))}px; height: ${stringify(canvasHeight * (canvasZoom / 100))}px;`)}>`;
   if (showGrid) {
     $$payload.out += "<!--[-->";
-    $$payload.out += `<div class="absolute inset-0 pointer-events-none"><div class="absolute top-0 bottom-0 border-l border-gray-300 opacity-60" style="left: 33.33%;"></div> <div class="absolute top-0 bottom-0 border-l border-gray-300 opacity-60" style="left: 66.67%;"></div> <div class="absolute left-0 right-0 border-t border-gray-300 opacity-60" style="top: 33.33%;"></div> <div class="absolute left-0 right-0 border-t border-gray-300 opacity-60" style="top: 66.67%;"></div></div>`;
+    $$payload.out += `<div class="absolute inset-0 pointer-events-none"><div class="absolute top-0 bottom-0" style="left: 33.33%; border-left: 2px solid #6b7280; opacity: 0.8;"></div> <div class="absolute top-0 bottom-0" style="left: 66.67%; border-left: 2px solid #6b7280; opacity: 0.8;"></div> <div class="absolute left-0 right-0" style="top: 33.33%; border-top: 2px solid #6b7280; opacity: 0.8;"></div> <div class="absolute left-0 right-0" style="top: 66.67%; border-top: 2px solid #6b7280; opacity: 0.8;"></div></div>`;
   } else {
     $$payload.out += "<!--[!-->";
   }
@@ -1177,29 +1182,44 @@ function TitleSection($$payload, $$props) {
   $$payload.out += `<div class="flex-1 flex items-center">`;
   {
     $$payload.out += "<!--[!-->";
-    $$payload.out += `<button class="text-xl font-semibold text-gray-900 cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors bg-transparent border-none" aria-label="Edit design title">${escape_html(title)}</button>`;
+    $$payload.out += `<button class="text-xl font-black text-white cursor-pointer hover:bg-gray-800 px-2 py-1 transition-colors bg-transparent border-none font-industrial tracking-wide" aria-label="Edit design title">${escape_html(title)}</button>`;
   }
   $$payload.out += `<!--]--></div>`;
   pop();
 }
-const UIStrings = {
-  ExportButton: "Download"
-};
-const LayoutDimensions = {
-  SidebarClosedWidth: "80px",
-  // 80px toolbox + 320px panel
-  EditBarHeight: "80px"
-};
-function TopBar($$payload, $$props) {
+function EditorTopBar($$payload, $$props) {
   push();
   let {
     title,
     canUndo,
-    canRedo
+    canRedo,
+    onSave,
+    saveStatus = SaveStatus.IDLE
   } = $$props;
-  $$payload.out += `<div class="fixed left-0 right-0 top-0 z-50 flex items-center bg-white border-b border-gray-200 shadow-sm" style="height: 64px;"><div class="flex w-20 items-center justify-center bg-gray-50 border-r border-gray-200" style="height: 64px;"><div class="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center"><svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path></svg></div></div> <div class="flex-1 flex items-center justify-between px-6">`;
+  $$payload.out += `<div class="fixed left-0 right-0 z-40 flex items-center bg-gray-900 border-b-2 border-green-400" style="top: 64px; height: 48px;"><div class="flex w-20 items-center justify-center bg-gray-800 border-r-2 border-green-400" style="height: 48px;"><div class="text-green-400 font-black text-sm font-punk transform -skew-x-12">EDIT</div></div> <div class="flex-1 flex items-center justify-between px-6">`;
   TitleSection($$payload, { title });
-  $$payload.out += `<!----> <div class="flex items-center space-x-4"><div class="flex items-center gap-1"><button${attr("disabled", !canUndo, true)} class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Undo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg></button> <button${attr("disabled", !canRedo, true)} class="flex h-8 w-8 items-center justify-center rounded border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Redo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 019-9 9 9 0 016 2.3l3 2.7"></path></svg></button></div> <button class="rounded-lg bg-purple-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700">${escape_html(UIStrings.ExportButton)}</button></div></div></div>`;
+  $$payload.out += `<!----> <div class="flex items-center space-x-4">`;
+  if (saveStatus !== SaveStatus.IDLE) {
+    $$payload.out += "<!--[-->";
+    $$payload.out += `<div class="flex items-center gap-2"><div${attr_class(`text-xs font-mono ${stringify(SaveStatusColors[saveStatus])}`)}>${escape_html(SaveStatusText[saveStatus])}</div> `;
+    if (saveStatus === SaveStatus.SAVING) {
+      $$payload.out += "<!--[-->";
+      $$payload.out += `<div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>`;
+    } else {
+      $$payload.out += "<!--[!-->";
+    }
+    $$payload.out += `<!--]--></div>`;
+  } else {
+    $$payload.out += "<!--[!-->";
+  }
+  $$payload.out += `<!--]--> <div class="flex items-center gap-1"><button${attr("disabled", !canUndo, true)} class="flex h-6 w-6 items-center justify-center border border-green-400 bg-transparent text-green-400 hover:bg-green-400 hover:text-black focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs" title="Undo" aria-label="Undo last action"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg></button> <button${attr("disabled", !canRedo, true)} class="flex h-6 w-6 items-center justify-center border border-green-400 bg-transparent text-green-400 hover:bg-green-400 hover:text-black focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs" title="Redo" aria-label="Redo last action"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 919-9 9 9 0 016 2.3l3 2.7"></path></svg></button></div> `;
+  if (onSave) {
+    $$payload.out += "<!--[-->";
+    $$payload.out += `<button${attr("disabled", saveStatus === SaveStatus.SAVING, true)}${attr_class(`${stringify(PostPunkStyles.SmallButton)} px-3 py-1 disabled:opacity-50`)} title="Save (Ctrl+S)">SAVE</button>`;
+  } else {
+    $$payload.out += "<!--[!-->";
+  }
+  $$payload.out += `<!--]--> <button${attr_class(`${stringify(PostPunkStyles.SmallButton)} px-3 py-1`)}>${escape_html(UIStrings.ExportButton)}</button></div></div></div>`;
   pop();
 }
 function TextEditor($$payload, $$props) {
@@ -1687,11 +1707,11 @@ function registerShapes() {
 function TextEditPanel($$payload, $$props) {
   push();
   let { element, updateProperty } = $$props;
-  $$payload.out += `<div class="flex items-center gap-4"><div class="flex items-center gap-2"><select class="rounded border border-gray-300 px-2 py-1 text-sm">`;
+  $$payload.out += `<div class="flex items-center gap-4"><div class="flex items-center gap-2"><label for="font-family-select" class="sr-only">Font family</label> <select id="font-family-select" class="rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Choose font family">`;
   $$payload.select_value = element.fontFamily;
   $$payload.out += `<option value="Arial"${maybe_selected($$payload, "Arial")}>Arial</option><option value="Helvetica"${maybe_selected($$payload, "Helvetica")}>Helvetica</option><option value="Times New Roman"${maybe_selected($$payload, "Times New Roman")}>Times New Roman</option><option value="Georgia"${maybe_selected($$payload, "Georgia")}>Georgia</option><option value="Courier New"${maybe_selected($$payload, "Courier New")}>Courier New</option>`;
   $$payload.select_value = void 0;
-  $$payload.out += `</select></div> <div class="flex items-center gap-2"><input type="number" min="8" max="200"${attr("value", element.fontSize)} class="w-16 rounded border border-gray-300 px-2 py-1 text-sm"/></div> <div class="h-6 w-px bg-gray-200"></div> `;
+  $$payload.out += `</select></div> <div class="flex items-center gap-2"><label for="font-size-input" class="sr-only">Font size</label> <input id="font-size-input" type="number" min="8" max="200"${attr("value", element.fontSize)} class="w-16 rounded border border-gray-300 px-2 py-1 text-sm" aria-label="Font size in pixels"/></div> <div class="h-6 w-px bg-gray-200"></div> `;
   FillEditor($$payload, {
     value: element.fill,
     onUpdate: (value) => updateProperty(ElementProperties.Fill, value)
@@ -1851,6 +1871,8 @@ function _page($$payload, $$props) {
   }
   let editingTextId = null;
   let designTitle = "Design Canvas";
+  let currentDesignId = null;
+  let saveStatus = SaveStatus.IDLE;
   let canvasBackgroundColor = "#ffffff";
   let showGrid = false;
   let canvasZoom = 100;
@@ -1871,18 +1893,150 @@ function _page($$payload, $$props) {
   function handleCloseTextEditor() {
     editingTextId = null;
   }
+  async function saveDesign() {
+    const currentAuthState = store_get($$store_subs ??= {}, "$authStore", authStore);
+    if (!currentAuthState.user) {
+      console.error("Cannot save: user not authenticated");
+      saveStatus = SaveStatus.ERROR;
+      return;
+    }
+    if (!currentDesignId) {
+      console.log("No current design ID, creating new design");
+      return await createNewDesign();
+    }
+    try {
+      saveStatus = SaveStatus.SAVING;
+      console.log("Saving design with ID:", currentDesignId);
+      const designData = {
+        title: designTitle,
+        canvas_data: {
+          shapes: store_get($$store_subs ??= {}, "$shapes", shapes),
+          textElements: store_get($$store_subs ??= {}, "$textElements", textElements),
+          images: store_get($$store_subs ??= {}, "$images", images)
+        },
+        canvas_background: canvasBackgroundColor,
+        canvas_size: { width: canvasWidth, height: canvasHeight }
+      };
+      console.log("Design data being saved:", designData);
+      const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(currentDesignId));
+      console.log("Saving to URL:", url);
+      const response = await fetch(url, {
+        method: "PUT",
+        ...FETCH_OPTIONS.WITH_JSON,
+        body: JSON.stringify(designData)
+      });
+      console.log("Save response status:", response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Save failed with response:", errorText);
+        throw new Error(`Failed to save design: ${response.status} - ${errorText}`);
+      }
+      const savedDesign = await response.json();
+      console.log("Design saved successfully:", savedDesign);
+      saveStatus = SaveStatus.SAVED;
+      setTimeout(
+        () => {
+          if (saveStatus === SaveStatus.SAVED) {
+            saveStatus = SaveStatus.IDLE;
+          }
+        },
+        2e3
+      );
+    } catch (error) {
+      console.error("Failed to save design:", error);
+      saveStatus = SaveStatus.ERROR;
+      setTimeout(
+        () => {
+          if (saveStatus === SaveStatus.ERROR) {
+            saveStatus = SaveStatus.IDLE;
+          }
+        },
+        5e3
+      );
+    }
+  }
+  async function createNewDesign() {
+    const currentAuthState = store_get($$store_subs ??= {}, "$authStore", authStore);
+    if (!currentAuthState.user) {
+      console.error("Cannot create design: user not authenticated");
+      saveStatus = SaveStatus.ERROR;
+      return;
+    }
+    try {
+      saveStatus = SaveStatus.SAVING;
+      console.log("Creating new design");
+      const designData = {
+        title: designTitle,
+        canvas_data: {
+          shapes: store_get($$store_subs ??= {}, "$shapes", shapes),
+          textElements: store_get($$store_subs ??= {}, "$textElements", textElements),
+          images: store_get($$store_subs ??= {}, "$images", images)
+        },
+        canvas_background: canvasBackgroundColor,
+        canvas_size: { width: canvasWidth, height: canvasHeight }
+      };
+      console.log("New design data:", designData);
+      const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BASE);
+      console.log("Creating design at URL:", url);
+      const response = await fetch(url, {
+        method: "POST",
+        ...FETCH_OPTIONS.WITH_JSON,
+        body: JSON.stringify(designData)
+      });
+      console.log("Create response status:", response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Create failed with response:", errorText);
+        throw new Error(`Failed to create design: ${response.status} - ${errorText}`);
+      }
+      const newDesign = await response.json();
+      console.log("New design created:", newDesign);
+      currentDesignId = newDesign.id;
+      const url2 = new URL(window.location.href);
+      url2.searchParams.set("id", newDesign.id);
+      window.history.replaceState({}, "", url2);
+      console.log("URL updated to:", url2.toString());
+      saveStatus = SaveStatus.SAVED;
+      setTimeout(
+        () => {
+          if (saveStatus === SaveStatus.SAVED) {
+            saveStatus = SaveStatus.IDLE;
+          }
+        },
+        2e3
+      );
+    } catch (error) {
+      console.error("Failed to create design:", error);
+      saveStatus = SaveStatus.ERROR;
+      setTimeout(
+        () => {
+          if (saveStatus === SaveStatus.ERROR) {
+            saveStatus = SaveStatus.IDLE;
+          }
+        },
+        5e3
+      );
+    }
+  }
+  function handleManualSave() {
+    saveDesign();
+  }
   let $$settled = true;
   let $$inner_payload;
   function $$render_inner($$payload2) {
-    $$payload2.out += `<div class="relative h-screen bg-gray-50">`;
-    TopBar($$payload2, {
+    $$payload2.out += `<div${attr_class(`relative h-screen ${stringify(PostPunkStyles.DarkBg)}`)}>`;
+    Header($$payload2, {});
+    $$payload2.out += `<!----> `;
+    EditorTopBar($$payload2, {
       title: designTitle,
       canUndo: history.canUndo(store_get($$store_subs ??= {}, "$history", history)),
-      canRedo: history.canRedo(store_get($$store_subs ??= {}, "$history", history))
+      canRedo: history.canRedo(store_get($$store_subs ??= {}, "$history", history)),
+      onSave: handleManualSave,
+      saveStatus
     });
-    $$payload2.out += `<!----> <div class="fixed left-0 z-30" style="top: 64px; bottom: 0;">`;
+    $$payload2.out += `<!----> <div class="fixed left-0 z-30" style="top: 112px; bottom: 0;">`;
     CanvasSidebar($$payload2);
-    $$payload2.out += `<!----></div> <div class="flex h-full flex-col"${attr_style(`margin-left: ${stringify(LayoutDimensions.SidebarClosedWidth)}; margin-top: 64px;`)}><div class="sticky z-20"${attr_style(`top: 64px; height: ${stringify(LayoutDimensions.EditBarHeight)};`)}>`;
+    $$payload2.out += `<!----></div> <div class="flex h-full flex-col"${attr_style(`margin-left: ${stringify(LayoutDimensions.SidebarClosedWidth)}; margin-top: 112px;`)}><div class="fixed z-20"${attr_style(`top: 112px; left: ${stringify(LayoutDimensions.SidebarClosedWidth)}; right: 0; height: ${stringify(LayoutDimensions.EditBarHeight)};`)}>`;
     if (selectedElement) {
       $$payload2.out += "<!--[-->";
       EditBarComponent($$payload2, {
@@ -1892,7 +2046,7 @@ function _page($$payload, $$props) {
       });
     } else {
       $$payload2.out += "<!--[!-->";
-      $$payload2.out += `<div class="h-full bg-gray-50 px-6 py-3 border-b border-gray-200"><div class="flex h-full items-center gap-6 overflow-x-auto">`;
+      $$payload2.out += `<div${attr_class(`h-full ${stringify(PostPunkStyles.PanelBg)} px-6 py-3 border-b border-gray-700`)}><div class="flex h-full items-center gap-6 overflow-x-auto">`;
       CanvasEditPanel($$payload2, {
         backgroundColor: canvasBackgroundColor,
         showGrid,
@@ -1903,7 +2057,7 @@ function _page($$payload, $$props) {
       });
       $$payload2.out += `<!----></div></div>`;
     }
-    $$payload2.out += `<!--]--></div> `;
+    $$payload2.out += `<!--]--></div> <div${attr_style(`margin-top: ${stringify(LayoutDimensions.EditBarHeight)};`)}>`;
     CanvasContainer($$payload2, {
       onStageReady: handleStageReady,
       canvasWidth,
@@ -1945,7 +2099,7 @@ function _page($$payload, $$props) {
         $$settled = false;
       }
     });
-    $$payload2.out += `<!----></div> `;
+    $$payload2.out += `<!----></div></div> `;
     TextEditor($$payload2, {
       editingTextId,
       textElements: store_get($$store_subs ??= {}, "$textElements", textElements),

@@ -26,7 +26,8 @@
 	import CanvasEditPanel from '../../lib/components/editing/panels/CanvasEditPanel.svelte';
 	import CanvasContainer from '../../lib/components/canvas/CanvasContainer.svelte';
 	import DownloadModal from '../../lib/components/DownloadModal.svelte';
-	import TopBar from '../../lib/components/layout/TopBar.svelte';
+	import Header from '../../lib/components/layout/Header.svelte';
+import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	import TextEditor from '../../lib/components/editing/TextEditor.svelte';
 	import {
 		createShapeDragEndHandler,
@@ -35,7 +36,14 @@
 		createPanHandlers
 	} from '../../lib/utils/canvasHandlers';
 	import { initializeApp } from '../../lib/init';
-	import { LayoutDimensions } from '../../lib/constants';
+	import { LayoutDimensions, PostPunkStyles, SaveStatus, type SaveStatusType } from '../../lib/constants';
+	import { Colors } from '../../lib/core/colors';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { buildApiUrl, API_ENDPOINTS } from '../../lib/constants/api';
+	import { FETCH_OPTIONS } from '../../lib/constants/http';
+	import { authStore, authService } from '../../lib/stores/auth';
+	import { onMount } from 'svelte';
 
 	// Initialize the element registry system
 	initializeApp();
@@ -53,6 +61,12 @@
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
 	let downloadModalOpen = $state(false);
+	
+	// Design save/load state
+	let currentDesignId = $state<string | null>(null);
+	let saveStatus = $state<SaveStatusType>(SaveStatus.IDLE);
+	let isLoading = $state(false);
+	let autoSaveTimeout: NodeJS.Timeout | null = null;
 
 	// Canvas state
 	let canvasBackgroundColor = $state('#ffffff');
@@ -91,6 +105,62 @@
 	$effect(() => {
 		if (selectedId && !selectedElement) {
 			selectedId = null;
+		}
+	});
+
+	// Handle URL parameters and load design if ID is provided
+	$effect(() => {
+		const designId = $page.url.searchParams.get('id');
+		if (designId && designId !== currentDesignId) {
+			currentDesignId = designId;
+			loadDesign(designId);
+		} else if (!designId && currentDesignId) {
+			// If no ID in URL but we have a current design ID, clear it for new design
+			currentDesignId = null;
+			// Reset to default canvas state
+			designTitle = 'Design Canvas';
+			canvasBackgroundColor = '#ffffff';
+			canvasWidth = 500;
+			canvasHeight = 400;
+			shapes.set([]);
+			textElements.set([]);
+			images.set([]);
+			selectedId = null;
+			history.reset();
+			saveStatus = SaveStatus.IDLE;
+		}
+	});
+
+	// Auto-save when canvas state changes
+	$effect(() => {
+		// Dependencies that should trigger auto-save
+		const canvasState = {
+			shapes: $shapes,
+			textElements: $textElements,
+			images: $images,
+			background: canvasBackgroundColor,
+			size: { width: canvasWidth, height: canvasHeight },
+			title: designTitle
+		};
+		
+		// Only auto-save if we have a design ID and we're not currently loading
+		if (currentDesignId && !isLoading && saveStatus !== SaveStatus.SAVING) {
+			scheduleAutoSave();
+		}
+	});
+
+	// Check authentication on mount
+	onMount(() => {
+		console.log('Editor mounted, checking authentication');
+		authService.checkAuth();
+	});
+
+	// Redirect to home if not authenticated
+	$effect(() => {
+		const authState = $authStore;
+		if (!authState.loading && !authState.user) {
+			console.log('User not authenticated, redirecting to home');
+			goto('/');
 		}
 	});
 
@@ -135,12 +205,251 @@
 	function handleSidebarClose() {
 		sidebarOpen = false;
 	}
+
+	// Save/Load Functions
+	async function loadDesign(designId: string) {
+		try {
+			isLoading = true;
+			saveStatus = SaveStatus.IDLE;
+			console.log('Loading design with ID:', designId);
+			
+			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(designId));
+			console.log('Loading from URL:', url);
+			
+			const response = await fetch(url, FETCH_OPTIONS.DEFAULT);
+			
+			console.log('Load response status:', response.status);
+			
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('Load failed with response:', errorText);
+				throw new Error(`Failed to load design: ${response.status} - ${errorText}`);
+			}
+			
+			const design = await response.json();
+			console.log('Design loaded:', design);
+			
+			// Update design state
+			designTitle = design.title;
+			canvasBackgroundColor = design.canvas_background || '#ffffff';
+			
+			// Update canvas size
+			if (design.canvas_size) {
+				canvasWidth = design.canvas_size.width || 500;
+				canvasHeight = design.canvas_size.height || 400;
+			}
+			
+			// Load canvas elements
+			if (design.canvas_data) {
+				shapes.set(design.canvas_data.shapes || []);
+				textElements.set(design.canvas_data.textElements || []);
+				images.set(design.canvas_data.images || []);
+			}
+			
+			// Clear selection and reset history
+			selectedId = null;
+			history.reset();
+			
+			saveStatus = SaveStatus.SAVED;
+		} catch (error) {
+			console.error('Failed to load design:', error);
+			saveStatus = SaveStatus.ERROR;
+			// Could show a toast notification here
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	async function saveDesign() {
+		// Use get() to access store value in Svelte 5
+		const currentAuthState = $authStore;
+		if (!currentAuthState.user) {
+			console.error('Cannot save: user not authenticated');
+			saveStatus = SaveStatus.ERROR;
+			return;
+		}
+
+		if (!currentDesignId) {
+			console.log('No current design ID, creating new design');
+			return await createNewDesign();
+		}
+		
+		try {
+			saveStatus = SaveStatus.SAVING;
+			console.log('Saving design with ID:', currentDesignId);
+			
+			const designData = {
+				title: designTitle,
+				canvas_data: {
+					shapes: $shapes,
+					textElements: $textElements,
+					images: $images
+				},
+				canvas_background: canvasBackgroundColor,
+				canvas_size: {
+					width: canvasWidth,
+					height: canvasHeight
+				}
+			};
+			
+			console.log('Design data being saved:', designData);
+			
+			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(currentDesignId));
+			console.log('Saving to URL:', url);
+			
+			const response = await fetch(url, {
+				method: 'PUT',
+				...FETCH_OPTIONS.WITH_JSON,
+				body: JSON.stringify(designData)
+			});
+			
+			console.log('Save response status:', response.status);
+			
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('Save failed with response:', errorText);
+				throw new Error(`Failed to save design: ${response.status} - ${errorText}`);
+			}
+			
+			const savedDesign = await response.json();
+			console.log('Design saved successfully:', savedDesign);
+			
+			saveStatus = SaveStatus.SAVED;
+			
+			// Reset to idle after 2 seconds
+			setTimeout(() => {
+				if (saveStatus === SaveStatus.SAVED) {
+					saveStatus = SaveStatus.IDLE;
+				}
+			}, 2000);
+			
+		} catch (error) {
+			console.error('Failed to save design:', error);
+			saveStatus = SaveStatus.ERROR;
+			
+			// Show error for longer
+			setTimeout(() => {
+				if (saveStatus === SaveStatus.ERROR) {
+					saveStatus = SaveStatus.IDLE;
+				}
+			}, 5000);
+		}
+	}
+
+	async function createNewDesign() {
+		// Use get() to access store value in Svelte 5
+		const currentAuthState = $authStore;
+		if (!currentAuthState.user) {
+			console.error('Cannot create design: user not authenticated');
+			saveStatus = SaveStatus.ERROR;
+			return;
+		}
+
+		try {
+			saveStatus = SaveStatus.SAVING;
+			console.log('Creating new design');
+			
+			const designData = {
+				title: designTitle,
+				canvas_data: {
+					shapes: $shapes,
+					textElements: $textElements,
+					images: $images
+				},
+				canvas_background: canvasBackgroundColor,
+				canvas_size: {
+					width: canvasWidth,
+					height: canvasHeight
+				}
+			};
+			
+			console.log('New design data:', designData);
+			
+			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BASE);
+			console.log('Creating design at URL:', url);
+			
+			const response = await fetch(url, {
+				method: 'POST',
+				...FETCH_OPTIONS.WITH_JSON,
+				body: JSON.stringify(designData)
+			});
+			
+			console.log('Create response status:', response.status);
+			
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('Create failed with response:', errorText);
+				throw new Error(`Failed to create design: ${response.status} - ${errorText}`);
+			}
+			
+			const newDesign = await response.json();
+			console.log('New design created:', newDesign);
+			
+			currentDesignId = newDesign.id;
+			
+			// Update URL without reload
+			const url2 = new URL(window.location.href);
+			url2.searchParams.set('id', newDesign.id);
+			window.history.replaceState({}, '', url2);
+			console.log('URL updated to:', url2.toString());
+			
+			saveStatus = SaveStatus.SAVED;
+			
+			// Reset to idle after 2 seconds
+			setTimeout(() => {
+				if (saveStatus === SaveStatus.SAVED) {
+					saveStatus = SaveStatus.IDLE;
+				}
+			}, 2000);
+			
+		} catch (error) {
+			console.error('Failed to create design:', error);
+			saveStatus = SaveStatus.ERROR;
+			
+			// Show error for longer
+			setTimeout(() => {
+				if (saveStatus === SaveStatus.ERROR) {
+					saveStatus = SaveStatus.IDLE;
+				}
+			}, 5000);
+		}
+	}
+
+	function scheduleAutoSave() {
+		if (autoSaveTimeout) {
+			clearTimeout(autoSaveTimeout);
+		}
+		
+		autoSaveTimeout = setTimeout(() => {
+			saveDesign();
+		}, 2000); // Auto-save after 2 seconds of inactivity
+	}
+
+	function handleManualSave() {
+		if (autoSaveTimeout) {
+			clearTimeout(autoSaveTimeout);
+		}
+		saveDesign();
+	}
+
+	// Handle keyboard shortcuts
+	function handleKeyDown(event: KeyboardEvent) {
+		if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+			event.preventDefault();
+			handleManualSave();
+		}
+	}
 </script>
 
-<div class="relative h-screen bg-gray-50">
+<svelte:window on:keydown={handleKeyDown} />
 
-	<!-- Top Bar -->
-	<TopBar 
+<div class="relative h-screen {PostPunkStyles.DarkBg}">
+
+	<!-- Main Header -->
+	<Header />
+	
+	<!-- Editor Top Bar -->
+	<EditorTopBar 
 		title={designTitle}
 		onTitleChange={titleChangeHandler}
 		onExportClick={() => downloadModalOpen = true}
@@ -148,10 +457,12 @@
 		onRedo={() => history.redo()}
 		canUndo={history.canUndo($history)}
 		canRedo={history.canRedo($history)}
+		onSave={handleManualSave}
+		{saveStatus}
 	/>
 
-	<!-- Sidebar Component (below header) -->
-	<div class="fixed left-0 z-30" style="top: 64px; bottom: 0;">
+	<!-- Sidebar Component (below both headers) -->
+	<div class="fixed left-0 z-30" style="top: 112px; bottom: 0;">
 		<CanvasSidebar
 			isOpen={sidebarOpen}
 			elementSelected={elementSelectedHandler}
@@ -162,10 +473,10 @@
 	</div>
 
 	<!-- Main Canvas Area (fixed positioning, always starts at sidebar closed width) -->
-	<div class="flex h-full flex-col" style="margin-left: {LayoutDimensions.SidebarClosedWidth}; margin-top: 64px;">
+	<div class="flex h-full flex-col" style="margin-left: {LayoutDimensions.SidebarClosedWidth}; margin-top: 112px;">
 
-		<!-- Sticky Edit Bar -->
-		<div class="sticky z-20" style="top: 64px; height: {LayoutDimensions.EditBarHeight};">
+		<!-- Fixed Edit Bar -->
+		<div class="fixed z-20" style="top: 112px; left: {LayoutDimensions.SidebarClosedWidth}; right: 0; height: {LayoutDimensions.EditBarHeight};">
 			{#if selectedElement}
 				<EditBarComponent
 					{selectedElement}
@@ -175,7 +486,7 @@
 				/>
 			{:else}
 				<!-- Canvas Edit Panel when nothing is selected -->
-				<div class="h-full bg-gray-50 px-6 py-3 border-b border-gray-200">
+				<div class="h-full {PostPunkStyles.PanelBg} px-6 py-3 border-b border-gray-700">
 					<div class="flex h-full items-center gap-6 overflow-x-auto">
 						<CanvasEditPanel
 							backgroundColor={canvasBackgroundColor}
@@ -196,6 +507,7 @@
 		</div>
 
 		<!-- Canvas Container -->
+		<div style="margin-top: {LayoutDimensions.EditBarHeight};">
 		<CanvasContainer 
 			bind:this={canvasContainerRef}
 			bind:updateTransformer
@@ -232,6 +544,7 @@
 			onTextElementDblClick={handleTextElementDblClick}
 			onTextElementDragEnd={textElementDragEndHandler}
 		/>
+		</div>
 	</div>
 
 	<!-- Text Editor -->
