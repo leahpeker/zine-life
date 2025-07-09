@@ -60,23 +60,50 @@ pub async fn auth_middleware(
 }
 
 // Helper function to extract current user from request (works with both cookies and headers)
-pub fn get_current_user(req: &actix_web::HttpRequest) -> Option<user::Model> {
+pub async fn get_current_user(req: &actix_web::HttpRequest, db: &DatabaseConnection) -> Option<user::Model> {
+    tracing::info!("get_current_user called");
+    
     // First check if user is already in extensions (from middleware)
     if let Some(user) = req.extensions().get::<user::Model>() {
+        tracing::info!("User found in extensions: {}", user.id);
         return Some(user.clone());
     }
     
+    // Log all cookies for debugging
+    tracing::info!("Cookies in request: {:?}", req.cookies());
+    
     // If not in extensions, try to get from cookie
     if let Some(cookie) = req.cookie("auth_token") {
+        tracing::info!("Found auth_token cookie: {}", cookie.value());
         if let Ok(claims) = verify_jwt_token(cookie.value()) {
-            if let Ok(_user_id) = Uuid::parse_str(&claims.sub) {
-                // We'd need database access here, but for now just return None
-                // This should be handled by proper middleware in production
-                return None;
+            tracing::info!("JWT token verified successfully for user: {}", claims.sub);
+            if let Ok(user_id) = Uuid::parse_str(&claims.sub) {
+                tracing::info!("Fetching user from database with ID: {}", user_id);
+                
+                // Fetch user from database
+                match user::Entity::find_by_id(user_id).one(db).await {
+                    Ok(Some(user)) => {
+                        tracing::info!("User found in database: {}", user.id);
+                        return Some(user);
+                    }
+                    Ok(None) => {
+                        tracing::warn!("User not found in database for ID: {}", user_id);
+                        return None;
+                    }
+                    Err(e) => {
+                        tracing::error!("Database error when fetching user: {}", e);
+                        return None;
+                    }
+                }
             }
+        } else {
+            tracing::error!("Failed to verify JWT token");
         }
+    } else {
+        tracing::info!("No auth_token cookie found");
     }
     
+    tracing::info!("No authenticated user found");
     None
 }
 

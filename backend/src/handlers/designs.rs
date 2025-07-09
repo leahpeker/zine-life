@@ -3,6 +3,7 @@ use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, ColumnTrai
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use time::OffsetDateTime;
+use tracing;
 
 use crate::entities::{design, user};
 use crate::auth::middleware::get_current_user;
@@ -84,7 +85,7 @@ pub async fn list_designs(
     let page: u64 = query.get("page").and_then(|p| p.parse().ok()).unwrap_or(1);
     let per_page: u64 = query.get("per_page").and_then(|p| p.parse().ok()).unwrap_or(20);
     
-    let current_user = get_current_user(&req);
+    let current_user = get_current_user(&req, db.as_ref()).await;
     
     // Build query: public designs + user's private designs if authenticated
     let mut query_builder = design::Entity::find();
@@ -147,7 +148,7 @@ pub async fn get_design(
         .ok_or_else(|| actix_web::error::ErrorNotFound("Design not found"))?;
     
     // Check access permissions
-    let current_user = get_current_user(&req);
+    let current_user = get_current_user(&req, db.as_ref()).await;
     if !design.is_public {
         match current_user {
             Some(user) if user.id == design.user_id => {
@@ -173,8 +174,15 @@ pub async fn create_design(
     db: web::Data<DatabaseConnection>,
     data: web::Json<CreateDesignRequest>,
 ) -> Result<HttpResponse> {
-    let current_user = get_current_user(&req)
-        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Authentication required"))?;
+    tracing::info!("Creating new design with data: {:?}", data);
+    
+    let current_user = get_current_user(&req, db.as_ref()).await
+        .ok_or_else(|| {
+            tracing::error!("Authentication required for create_design");
+            actix_web::error::ErrorUnauthorized("Authentication required")
+        })?;
+    
+    tracing::info!("User authenticated: {}", current_user.id);
     
     let new_design = design::ActiveModel {
         id: Set(Uuid::new_v4()),
@@ -188,8 +196,15 @@ pub async fn create_design(
         updated_at: Set(OffsetDateTime::now_utc()),
     };
     
+    tracing::info!("Attempting to insert design into database");
+    
     let design = new_design.insert(db.as_ref()).await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to create design: {}", e)))?;
+        .map_err(|e| {
+            tracing::error!("Failed to create design: {}", e);
+            actix_web::error::ErrorInternalServerError(format!("Failed to create design: {}", e))
+        })?;
+    
+    tracing::info!("Design created successfully with id: {}", design.id);
     
     let response = DesignResponse::from((design, Some(current_user)));
     Ok(HttpResponse::Created().json(response))
@@ -202,22 +217,46 @@ pub async fn update_design(
     db: web::Data<DatabaseConnection>,
     data: web::Json<UpdateDesignRequest>,
 ) -> Result<HttpResponse> {
-    let current_user = get_current_user(&req)
-        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Authentication required"))?;
+    let design_id_str = path.into_inner();
+    tracing::info!("Updating design with id: {} and data: {:?}", design_id_str, data);
     
-    let design_id = Uuid::parse_str(&path.into_inner())
-        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid design ID"))?;
+    let current_user = get_current_user(&req, db.as_ref()).await
+        .ok_or_else(|| {
+            tracing::error!("Authentication required for update_design");
+            actix_web::error::ErrorUnauthorized("Authentication required")
+        })?;
+    
+    tracing::info!("User authenticated: {}", current_user.id);
+    
+    let design_id = Uuid::parse_str(&design_id_str)
+        .map_err(|_| {
+            tracing::error!("Invalid design ID format: {}", design_id_str);
+            actix_web::error::ErrorBadRequest("Invalid design ID")
+        })?;
+    
+    tracing::info!("Looking up design with UUID: {}", design_id);
     
     let design = design::Entity::find_by_id(design_id)
         .one(db.as_ref())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Database error: {}", e)))?
-        .ok_or_else(|| actix_web::error::ErrorNotFound("Design not found"))?;
+        .map_err(|e| {
+            tracing::error!("Database error when finding design: {}", e);
+            actix_web::error::ErrorInternalServerError(format!("Database error: {}", e))
+        })?
+        .ok_or_else(|| {
+            tracing::error!("Design not found with id: {}", design_id);
+            actix_web::error::ErrorNotFound("Design not found")
+        })?;
+    
+    tracing::info!("Found design, checking ownership");
     
     // Check ownership
     if design.user_id != current_user.id {
+        tracing::error!("User {} attempted to edit design {} owned by {}", current_user.id, design_id, design.user_id);
         return Err(actix_web::error::ErrorForbidden("You can only edit your own designs"));
     }
+    
+    tracing::info!("Ownership verified, updating design");
     
     let mut active_design: design::ActiveModel = design.into();
     
@@ -239,8 +278,15 @@ pub async fn update_design(
     }
     active_design.updated_at = Set(OffsetDateTime::now_utc());
     
+    tracing::info!("Saving updated design to database");
+    
     let updated_design = active_design.update(db.as_ref()).await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(format!("Failed to update design: {}", e)))?;
+        .map_err(|e| {
+            tracing::error!("Failed to update design: {}", e);
+            actix_web::error::ErrorInternalServerError(format!("Failed to update design: {}", e))
+        })?;
+    
+    tracing::info!("Design updated successfully");
     
     let response = DesignResponse::from((updated_design, Some(current_user)));
     Ok(HttpResponse::Ok().json(response))
@@ -252,7 +298,7 @@ pub async fn delete_design(
     path: web::Path<String>,
     db: web::Data<DatabaseConnection>,
 ) -> Result<HttpResponse> {
-    let current_user = get_current_user(&req)
+    let current_user = get_current_user(&req, db.as_ref()).await
         .ok_or_else(|| actix_web::error::ErrorUnauthorized("Authentication required"))?;
     
     let design_id = Uuid::parse_str(&path.into_inner())
