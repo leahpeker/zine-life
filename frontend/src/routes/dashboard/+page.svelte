@@ -111,10 +111,10 @@
 	<div class="max-w-6xl mx-auto px-4 py-8">
 		<!-- Header -->
 		<div class="mb-8">
-			<h1 class="text-4xl font-black text-green-400 font-punk tracking-wider transform -skew-x-3 mb-2">
+			<h1 class="text-4xl font-black text-primary font-punk tracking-wider transform -skew-x-3 mb-2">
 				MY DESIGNS
 			</h1>
-			<p class="text-gray-400 font-mono">
+			<p class="text-text-muted font-mono">
 				Your underground graphics collection
 			</p>
 		</div>
@@ -124,7 +124,8 @@
 			<!-- New Design Button -->
 			<button 
 				onclick={newDesign}
-				class="bg-green-400 text-black px-6 py-3 font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-2 border-green-400 font-industrial"
+				class="px-6 py-3 font-black tracking-wide transform -skew-x-6 transition-all border-2 font-industrial hover:brightness-110"
+				style="background-color: var(--color-primary); color: black; border-color: var(--color-primary);"
 				aria-label="Create a new design"
 			>
 				NEW DESIGN
@@ -135,11 +136,26 @@
 				{#each Object.entries(FILTER_CONFIG) as [filterKey, config]}
 					<button 
 						onclick={() => filter = filterKey}
-						class="px-4 py-2 font-black tracking-wide border-2 font-industrial transition-colors {filter === filterKey ? 'bg-green-400 text-black border-green-400' : 'bg-transparent text-green-400 border-green-400 hover:bg-green-400 hover:text-black'}"
+						class="px-4 py-2 font-black tracking-wide border-2 font-industrial transition-all relative group"
+						style="
+							background-color: {filter === filterKey ? 'var(--color-primary)' : 'transparent'};
+							color: {filter === filterKey ? 'black' : 'var(--color-primary)'};
+							border-color: var(--color-primary);
+						"
 						aria-label={config.ariaLabel}
 						aria-pressed={filter === filterKey}
 					>
-						{config.label}
+						<span class="{filter === filterKey ? '' : 'group-hover:opacity-0'} transition-opacity">
+							{config.label}
+						</span>
+						{#if filter !== filterKey}
+							<span 
+								class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity font-black"
+								style="background-color: var(--color-primary); color: black;"
+							>
+								{config.label}
+							</span>
+						{/if}
 					</button>
 				{/each}
 			</div>
@@ -148,16 +164,16 @@
 		<!-- Loading State -->
 		{#if loading}
 			<div class="text-center py-16">
-				<div class="text-green-400 font-mono text-xl">Loading your designs...</div>
+				<div class="text-primary font-mono text-xl">Loading your designs...</div>
 			</div>
 		
 		<!-- Error State -->
 		{:else if error}
 			<div class="text-center py-16">
-				<div class="text-red-400 font-mono text-xl mb-4">{error}</div>
+				<div class="text-danger font-mono text-xl mb-4">{error}</div>
 				<button 
 					onclick={refreshDesigns}
-					class="bg-green-400 text-black px-6 py-2 font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-2 border-green-400 font-industrial"
+					class="bg-primary text-black px-6 py-2 font-black tracking-wide transform -skew-x-6 hover:bg-primary-light transition-colors border-2 border-primary font-industrial"
 					aria-label="Retry loading designs"
 				>
 					RETRY
@@ -166,17 +182,17 @@
 		
 		<!-- Empty State -->
 		{:else if filteredDesigns.length === 0}
-			<div class="text-center py-16 border-2 border-gray-800 bg-gray-900">
-				<div class="text-green-400 text-6xl mb-4">[+]</div>
+			<div class="text-center py-16 border-2 border-background-card bg-background-panel">
+				<div class="text-primary text-6xl mb-4">[+]</div>
 				<h2 class="text-2xl font-black text-white mb-4 font-industrial">
 					{UI_TEXT.MESSAGES.EMPTY_STATE_TITLE(filter)}
 				</h2>
-				<p class="text-gray-400 font-mono mb-6">
+				<p class="text-text-muted font-mono mb-6">
 					{UI_TEXT.MESSAGES.EMPTY_STATE_DESCRIPTION(filter)}
 				</p>
 				<button 
 					onclick={newDesign}
-					class="bg-green-400 text-black px-6 py-3 font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-2 border-green-400 font-industrial"
+					class="bg-primary text-black px-6 py-3 font-black tracking-wide transform -skew-x-6 hover:bg-primary-light transition-colors border-2 border-primary font-industrial"
 					aria-label="Create your first design"
 				>
 					CREATE FIRST DESIGN
@@ -187,14 +203,14 @@
 		{:else}
 			<ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="list" aria-label="Your designs">
 				{#each filteredDesigns as design}
-					<li class="border-2 border-gray-800 bg-gray-900 hover:border-green-400 transition-colors photocopied">
+					<li class="border-2 border-background-card bg-background-panel hover:border-primary transition-colors photocopied">
 						<!-- Design Preview -->
-						<div class="bg-gray-800 h-48 flex items-center justify-center relative">
+						<div class="bg-background-card h-48 flex items-center justify-center relative">
 							<SimpleThumbnail {design} size="large" className="bg-white" />
 							
 							<!-- Privacy Badge -->
 							<div class="absolute top-2 right-2">
-								<span class="px-2 py-1 text-xs font-black tracking-wide font-industrial {design.is_public ? 'bg-green-400 text-black' : 'bg-gray-700 text-gray-300'}">
+								<span class="px-2 py-1 text-xs font-black tracking-wide font-industrial {design.is_public ? 'bg-primary text-black' : 'bg-background-input text-text-muted'}">
 									{design.is_public ? 'PUBLIC' : 'PRIVATE'}
 								</span>
 							</div>
@@ -203,7 +219,7 @@
 						<!-- Design Info -->
 						<div class="p-4">
 							<h3 class="text-lg font-black text-white mb-2 font-industrial">{design.title}</h3>
-							<p class="text-gray-400 font-mono text-xs mb-4">
+							<p class="text-text-muted font-mono text-xs mb-4">
 								Created: {new Date(design.created_at).toLocaleDateString()}<br>
 								Updated: {new Date(design.updated_at).toLocaleDateString()}
 							</p>
@@ -212,14 +228,14 @@
 							<div class="flex gap-2">
 								<button 
 									onclick={() => editDesign(design.id)}
-									class="bg-green-400 text-black px-3 py-1 text-sm font-black tracking-wide hover:bg-green-300 transition-colors border border-green-400 font-industrial"
+									class="bg-primary text-black px-3 py-1 text-sm font-black tracking-wide hover:bg-primary-light transition-colors border border-primary font-industrial"
 									aria-label="Edit {design.title}"
 								>
 									EDIT
 								</button>
 								<button 
 									onclick={() => deleteDesign(design.id)}
-									class="bg-transparent text-red-400 px-3 py-1 text-sm font-black tracking-wide border border-red-400 hover:bg-red-400 hover:text-black transition-colors font-industrial"
+									class="bg-transparent text-danger px-3 py-1 text-sm font-black tracking-wide border border-danger hover:bg-danger hover:text-black transition-colors font-industrial"
 									aria-label="Delete {design.title}"
 								>
 									DELETE

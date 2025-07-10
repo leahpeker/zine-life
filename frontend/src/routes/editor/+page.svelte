@@ -486,7 +486,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 				/>
 			{:else}
 				<!-- Canvas Edit Panel when nothing is selected -->
-				<div class="h-full {PostPunkStyles.PanelBg} px-6 py-3 border-b border-gray-700">
+				<div class="h-full {PostPunkStyles.PanelBg} px-6 py-3 border-b border-border">
 					<div class="flex h-full items-center gap-6 overflow-x-auto">
 						<CanvasEditPanel
 							backgroundColor={canvasBackgroundColor}
