@@ -25,6 +25,10 @@ pub struct Model {
     #[sea_orm(column_type = "Json")]
     pub canvas_size: serde_json::Value,
     
+    /// Multi-page design data as JSON array
+    #[sea_orm(column_type = "Json")]
+    pub pages: serde_json::Value,
+    
     /// Whether this design is publicly visible (defaults to false)
     #[sea_orm(default_value = "false")]
     pub is_public: bool,

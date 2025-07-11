@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { shapes, type UserShape } from '../../lib/stores/shapeStore';
-	import { textElements, type UserTextElement } from '../../lib/stores/textStore';
+	import { textElements, type UserText } from '../../lib/stores/textStore';
 	import { images, type UserImage } from '../../lib/stores/imageStore';
 	import { history } from '../../lib/stores/historyStore';
 	import { zineStore } from '../../lib/stores/pageStore';
@@ -54,12 +54,17 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	let selectedId = $state<string | null>(null);
 	let canvasContainerRef: any;
 	let stageRef = $state<any>();
+	let stageRefs = $state<any[]>([]);
 	let updateTransformer = $state<(() => void) | undefined>();
 	
 	// Handle stage ready callback
 	function handleStageReady(stage: any) {
 		stageRef = stage;
+		console.log("Stage ref handld", stageRef);
+
 	}
+
+	console.log("Stage ref", stageRef);
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
 	let downloadModalOpen = $state(false);
@@ -93,7 +98,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	// Event handlers
 	const shapeDragEndHandler = $derived(createShapeDragEndHandler(canvasZoom));
 	const imageDragEndHandler = $derived(createImageDragEndHandler(canvasZoom));
-	const zoomHandler = $derived(createZoomHandler(canvasZoom, (zoom) => canvasZoom = zoom));
+	const zoomHandler = createZoomHandler(() => stageRef, (zoom) => canvasZoom = zoom);
 	const panHandlers = createPanHandlers();
 	
 	// Set up stage ref for pan handlers
@@ -121,12 +126,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			currentDesignId = null;
 			// Reset to default canvas state
 			designTitle = 'Design Canvas';
-			canvasBackgroundColor = '#ffffff';
-			canvasWidth = 500;
-			canvasHeight = 400;
-			shapes.set([]);
-			textElements.set([]);
-			images.set([]);
+			zineStore.reset();
 			selectedId = null;
 			history.reset();
 			saveStatus = SaveStatus.IDLE;
@@ -199,7 +199,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	
 	let textEditorRef = $state<any>();
 
-	function handleTextElementDblClick(textElement: UserTextElement) {
+	function handleTextElementDblClick(textElement: UserText) {
 		editingTextId = textElement.id;
 		if (textEditorRef) {
 			textEditorRef.positionInput(textElement, stageRef, canvasZoom);
@@ -243,19 +243,14 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			
 			// Update design state
 			designTitle = design.title;
-			canvasBackgroundColor = design.canvas_background || '#ffffff';
 			
-			// Update canvas size
-			if (design.canvas_size) {
-				canvasWidth = design.canvas_size.width || 500;
-				canvasHeight = design.canvas_size.height || 400;
-			}
-			
-			// Load canvas elements
-			if (design.canvas_data) {
-				shapes.set(design.canvas_data.shapes || []);
-				textElements.set(design.canvas_data.textElements || []);
-				images.set(design.canvas_data.images || []);
+			// Load multi-page design
+			if (design.pages && design.pages.length > 0) {
+				zineStore.importPages(design.pages);
+				console.log('Loaded multi-page design with', design.pages.length, 'pages');
+			} else {
+				console.log('No pages found in design, creating default page');
+				zineStore.reset();
 			}
 			
 			// Clear selection and reset history
@@ -292,16 +287,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			
 			const designData = {
 				title: designTitle,
-				canvas_data: {
-					shapes: $shapes,
-					textElements: $textElements,
-					images: $images
-				},
-				canvas_background: canvasBackgroundColor,
-				canvas_size: {
-					width: canvasWidth,
-					height: canvasHeight
-				}
+				pages: zineStore.exportPages($zineStore)
 			};
 			
 			console.log('Design data being saved:', designData);
@@ -363,16 +349,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			
 			const designData = {
 				title: designTitle,
-				canvas_data: {
-					shapes: $shapes,
-					textElements: $textElements,
-					images: $images
-				},
-				canvas_background: canvasBackgroundColor,
-				canvas_size: {
-					width: canvasWidth,
-					height: canvasHeight
-				}
+				pages: zineStore.exportPages($zineStore)
 			};
 			
 			console.log('New design data:', designData);
@@ -455,7 +432,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="relative h-screen {PostPunkStyles.DarkBg}">
+<div class="fixed inset-0 {PostPunkStyles.DarkBg}">
 
 	<!-- Main Header -->
 	<Header />
@@ -519,10 +496,11 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 		</div>
 
 		<!-- Multi-Page Canvas Container -->
-		<div style="margin-top: {LayoutDimensions.EditBarHeight}; padding: 1rem;">
+		<div class="pt-8 px-4 pb-4" style="margin-top: {LayoutDimensions.EditBarHeight};">
 			<MultiPageCanvas 
 				bind:this={canvasContainerRef}
 				bind:updateTransformer
+				bind:stageRefs
 				onStageReady={handleStageReady}
 				{canvasZoom}
 				{showGrid}
@@ -564,8 +542,8 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	<!-- Download Modal -->
 	<DownloadModal 
 		isOpen={downloadModalOpen}
-		{stageRef}
-		{canvasBackgroundColor}
+		stageRefs={stageRefs || []}
+		pages={$zineStore.pages || []}
 		{designTitle}
 		onClose={() => downloadModalOpen = false}
 	/>

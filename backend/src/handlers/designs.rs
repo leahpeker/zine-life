@@ -11,18 +11,14 @@ use crate::auth::middleware::get_current_user;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateDesignRequest {
     pub title: String,
-    pub canvas_data: serde_json::Value,
-    pub canvas_background: String,
-    pub canvas_size: serde_json::Value,
+    pub pages: serde_json::Value,
     pub is_public: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UpdateDesignRequest {
     pub title: Option<String>,
-    pub canvas_data: Option<serde_json::Value>,
-    pub canvas_background: Option<String>,
-    pub canvas_size: Option<serde_json::Value>,
+    pub pages: Option<serde_json::Value>,
     pub is_public: Option<bool>,
 }
 
@@ -31,9 +27,7 @@ pub struct DesignResponse {
     pub id: String,
     pub user_id: String,
     pub title: String,
-    pub canvas_data: serde_json::Value,
-    pub canvas_background: String,
-    pub canvas_size: serde_json::Value,
+    pub pages: serde_json::Value,
     pub is_public: bool,
     pub created_at: String,
     pub updated_at: String,
@@ -61,9 +55,7 @@ impl From<(design::Model, Option<user::Model>)> for DesignResponse {
             id: design.id.to_string(),
             user_id: design.user_id.to_string(),
             title: design.title,
-            canvas_data: design.canvas_data,
-            canvas_background: design.canvas_background,
-            canvas_size: design.canvas_size,
+            pages: design.pages,
             is_public: design.is_public,
             created_at: design.created_at.format(&time::format_description::well_known::Rfc3339).unwrap_or_else(|_| design.created_at.to_string()),
             updated_at: design.updated_at.format(&time::format_description::well_known::Rfc3339).unwrap_or_else(|_| design.updated_at.to_string()),
@@ -188,12 +180,11 @@ pub async fn create_design(
         id: Set(Uuid::new_v4()),
         user_id: Set(current_user.id),
         title: Set(data.title.clone()),
-        canvas_data: Set(data.canvas_data.clone()),
-        canvas_background: Set(data.canvas_background.clone()),
-        canvas_size: Set(data.canvas_size.clone()),
+        pages: Set(data.pages.clone()),
         is_public: Set(data.is_public.unwrap_or(false)),
         created_at: Set(OffsetDateTime::now_utc()),
         updated_at: Set(OffsetDateTime::now_utc()),
+        ..Default::default()
     };
     
     tracing::info!("Attempting to insert design into database");
@@ -264,14 +255,8 @@ pub async fn update_design(
     if let Some(title) = &data.title {
         active_design.title = Set(title.clone());
     }
-    if let Some(canvas_data) = &data.canvas_data {
-        active_design.canvas_data = Set(canvas_data.clone());
-    }
-    if let Some(canvas_background) = &data.canvas_background {
-        active_design.canvas_background = Set(canvas_background.clone());
-    }
-    if let Some(canvas_size) = &data.canvas_size {
-        active_design.canvas_size = Set(canvas_size.clone());
+    if let Some(pages) = &data.pages {
+        active_design.pages = Set(pages.clone());
     }
     if let Some(is_public) = data.is_public {
         active_design.is_public = Set(is_public);

@@ -64,6 +64,17 @@ pub mod test_data {
             "height": 400
         });
 
+        let pages = serde_json::json!([{
+            "id": "page-1",
+            "pageNumber": 1,
+            "canvasWidth": 500,
+            "canvasHeight": 400,
+            "canvasBackgroundColor": "#ffffff",
+            "shapes": [],
+            "textElements": [],
+            "images": []
+        }]);
+
         let design = design::ActiveModel {
             id: Set(uuid::Uuid::new_v4()),
             user_id: Set(user_id),
@@ -71,6 +82,7 @@ pub mod test_data {
             canvas_data: Set(canvas_data),
             canvas_background: Set("#ffffff".to_string()),
             canvas_size: Set(canvas_size),
+            pages: Set(pages),
             is_public: Set(is_public),
             created_at: Set(time::OffsetDateTime::now_utc()),
             updated_at: Set(time::OffsetDateTime::now_utc()),
