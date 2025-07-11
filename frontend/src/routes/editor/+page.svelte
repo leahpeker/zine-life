@@ -3,6 +3,7 @@
 	import { textElements, type UserTextElement } from '../../lib/stores/textStore';
 	import { images, type UserImage } from '../../lib/stores/imageStore';
 	import { history } from '../../lib/stores/historyStore';
+	import { zineStore } from '../../lib/stores/pageStore';
 	import { 
 		handleUpdateCanvasBackground,
 		handleToggleGrid,
@@ -25,6 +26,7 @@
 	import EditBarComponent from '../../lib/components/editing/EditBarComponent.svelte';
 	import CanvasEditPanel from '../../lib/components/editing/panels/CanvasEditPanel.svelte';
 	import CanvasContainer from '../../lib/components/canvas/CanvasContainer.svelte';
+	import MultiPageCanvas from '../../lib/components/pages/MultiPageCanvas.svelte';
 	import DownloadModal from '../../lib/components/DownloadModal.svelte';
 	import Header from '../../lib/components/layout/Header.svelte';
 import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
@@ -128,6 +130,16 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			selectedId = null;
 			history.reset();
 			saveStatus = SaveStatus.IDLE;
+		}
+	});
+
+	// Sync canvas properties with current page
+	$effect(() => {
+		const currentPage = zineStore.getCurrentPage($zineStore);
+		if (currentPage) {
+			canvasBackgroundColor = currentPage.canvasBackgroundColor;
+			canvasWidth = currentPage.canvasWidth;
+			canvasHeight = currentPage.canvasHeight;
 		}
 	});
 
@@ -506,44 +518,38 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			{/if}
 		</div>
 
-		<!-- Canvas Container -->
-		<div style="margin-top: {LayoutDimensions.EditBarHeight};">
-		<CanvasContainer 
-			bind:this={canvasContainerRef}
-			bind:updateTransformer
-			onStageReady={handleStageReady}
-			{canvasWidth}
-			{canvasHeight}
-			{canvasZoom}
-			{canvasBackgroundColor}
-			{showGrid}
-			shapes={$shapes}
-			images={$images}
-			textElements={$textElements}
-			{selectedId}
-			onStageClick={(e) => {
-				const clickedOnEmpty = e.target === e.target.getStage();
-				if (clickedOnEmpty) {
-					selectedId = null;
-				}
-			}}
-			onWheel={zoomHandler}
-			onMouseDown={panHandlers.handleMouseDown}
-			onMouseMove={panHandlers.handleMouseMove}
-			onMouseUp={panHandlers.handleMouseUp}
-			onShapeDragEnd={shapeDragEndHandler}
-			onImageDragEnd={imageDragEndHandler}
-			onElementClick={(id) => {
-				selectedId = id;
-				if (updateTransformer) updateTransformer();
-			}}
-			onTextElementClick={(id) => {
-				selectedId = id;
-				if (updateTransformer) updateTransformer();
-			}}
-			onTextElementDblClick={handleTextElementDblClick}
-			onTextElementDragEnd={textElementDragEndHandler}
-		/>
+		<!-- Multi-Page Canvas Container -->
+		<div style="margin-top: {LayoutDimensions.EditBarHeight}; padding: 1rem;">
+			<MultiPageCanvas 
+				bind:this={canvasContainerRef}
+				bind:updateTransformer
+				onStageReady={handleStageReady}
+				{canvasZoom}
+				{showGrid}
+				{selectedId}
+				onStageClick={(e) => {
+					const clickedOnEmpty = e.target === e.target.getStage();
+					if (clickedOnEmpty) {
+						selectedId = null;
+					}
+				}}
+				onWheel={zoomHandler}
+				onMouseDown={panHandlers.handleMouseDown}
+				onMouseMove={panHandlers.handleMouseMove}
+				onMouseUp={panHandlers.handleMouseUp}
+				onShapeDragEnd={shapeDragEndHandler}
+				onImageDragEnd={imageDragEndHandler}
+				onElementClick={(id) => {
+					selectedId = id;
+					if (updateTransformer) updateTransformer();
+				}}
+				onTextElementClick={(id) => {
+					selectedId = id;
+					if (updateTransformer) updateTransformer();
+				}}
+				onTextElementDblClick={handleTextElementDblClick}
+				onTextElementDragEnd={textElementDragEndHandler}
+			/>
 		</div>
 	</div>
 
