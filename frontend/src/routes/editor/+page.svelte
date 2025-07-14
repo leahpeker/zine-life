@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { elements, isShape, isText, isImage, type Element } from '../../lib/stores/elementsStore';
-	import type { UserShape, UserText, UserImage } from '../../lib/types/elements';
+	import { elements, isText, type Element } from '../../lib/stores/elementsStore';
 	import { history } from '../../lib/stores/historyStore';
 	import { zineStore } from '../../lib/stores/pageStore';
 	import { 
@@ -17,32 +16,26 @@
 		handleUpdateElement,
 		handleCloseEditBar
 	} from '../../lib/helpers/elementManagementHelpers';
-	import {
-		handleTextElementDragEnd
-	} from '../../lib/helpers/textEditingHelpers';
 	import { removeAllElements } from '../../lib/utils/elementHelpers';
 	import CanvasSidebar from '../../lib/components/canvas/canvasSidebar.svelte';
 	import EditBarComponent from '../../lib/components/editing/EditBarComponent.svelte';
 	import CanvasEditPanel from '../../lib/components/editing/panels/CanvasEditPanel.svelte';
-	import CanvasContainer from '../../lib/components/canvas/CanvasContainer.svelte';
 	import MultiPageCanvas from '../../lib/components/pages/MultiPageCanvas.svelte';
-	import DownloadModal from '../../lib/components/DownloadModal.svelte';
+	import DownloadModal from '../../lib/components/download/DownloadModal.svelte';
 	import Header from '../../lib/components/layout/Header.svelte';
 import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	import TextEditor from '../../lib/components/editing/TextEditor.svelte';
 	import {
-		createElementDragEndHandler,
 		createZoomHandler,
 		createPanHandlers
 	} from '../../lib/utils/canvasHandlers';
 	import { initializeApp } from '../../lib/init';
 	import { LayoutDimensions, StyleGuide, SaveStatus, type SaveStatusType } from '../../lib/constants';
-	import { Colors } from '../../lib/core/colors';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { buildApiUrl, API_ENDPOINTS } from '../../lib/constants/api';
-	import { FETCH_OPTIONS } from '../../lib/constants/http';
-	import { authStore, authService } from '../../lib/stores/auth';
+	import { authStore } from '../../lib/stores/auth';
+	import { authService } from '../../lib/services/authService';
+	import { designService } from '../../lib/services/designService';
 	import { onMount } from 'svelte';
 
 	// Initialize the element registry system
@@ -70,6 +63,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	let saveStatus = $state<SaveStatusType>(SaveStatus.IDLE);
 	let isLoading = $state(false);
 	let autoSaveTimeout: number | null = null;
+	let statusResetTimeout: number | null = null;
 
 	// Canvas state
 	let canvasBackgroundColor = $state('#ffffff');
@@ -89,7 +83,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 
 	// Event handlers
-	const elementDragEndHandler = $derived(createElementDragEndHandler(canvasZoom));
 	const zoomHandler = createZoomHandler(() => stageRef, (zoom) => canvasZoom = zoom);
 	const panHandlers = createPanHandlers();
 	
@@ -185,10 +178,12 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	
 	let textEditorRef = $state<any>();
 
-	function handleTextElementDblClick(textElement: UserText) {
-		editingTextId = textElement.id;
-		if (textEditorRef) {
-			textEditorRef.positionInput(textElement, stageRef, canvasZoom);
+	function handleTextElementDblClick(textElement: Element) {
+		if (isText(textElement)) {
+			editingTextId = textElement.id;
+			if (textEditorRef) {
+				textEditorRef.positionInput(textElement, stageRef, canvasZoom);
+			}
 		}
 	}
 
@@ -204,192 +199,43 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 		sidebarOpen = false;
 	}
 
-	// Save/Load Functions
 	async function loadDesign(designId: string) {
-		try {
-			isLoading = true;
-			saveStatus = SaveStatus.IDLE;
-			
-			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(designId));
-			
-			const response = await fetch(url, FETCH_OPTIONS.DEFAULT);
-			
-			
-			if (!response.ok) {
-				const errorText = await response.text();
-				console.error('Load failed with response:', errorText);
-				throw new Error(`Failed to load design: ${response.status} - ${errorText}`);
-			}
-			
-			const design = await response.json();
-			
-			// Update design state
-			designTitle = design.title;
-			
-			// Load multi-page design
-			if (design.pages && design.pages.length > 0) {
-				zineStore.importPages(design.pages);
-			} else {
-				zineStore.reset();
-			}
-			
-			// Clear selection and reset history
-			selectedId = null;
-			history.reset();
-			
-			saveStatus = SaveStatus.SAVED;
-		} catch (error) {
-			console.error('Failed to load design:', error);
-			saveStatus = SaveStatus.ERROR;
-			// Could show a toast notification here
-		} finally {
-			isLoading = false;
-		}
+		await designService.loadDesign(designId, {
+			setIsLoading: (loading) => isLoading = loading,
+			setSaveStatus: (status) => saveStatus = status,
+			setDesignTitle: (title) => designTitle = title,
+			setSelectedId: (id) => selectedId = id
+		});
 	}
 
 	async function saveDesign() {
-		// Use get() to access store value in Svelte 5
 		const currentAuthState = $authStore;
-		if (!currentAuthState.user) {
-			console.error('Cannot save: user not authenticated');
-			saveStatus = SaveStatus.ERROR;
-			return;
-		}
-
-		if (!currentDesignId) {
-			return await createNewDesign();
-		}
-		
-		try {
-			saveStatus = SaveStatus.SAVING;
-			
-			const designData = {
-				title: designTitle,
-				pages: zineStore.exportPages($zineStore)
-			};
-			
-			
-			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(currentDesignId));
-			
-			const response = await fetch(url, {
-				method: 'PUT',
-				...FETCH_OPTIONS.WITH_JSON,
-				body: JSON.stringify(designData)
-			});
-			
-			
-			if (!response.ok) {
-				const errorText = await response.text();
-				console.error('Save failed with response:', errorText);
-				throw new Error(`Failed to save design: ${response.status} - ${errorText}`);
+		await designService.saveDesign(
+			currentDesignId!,
+			designTitle,
+			!!currentAuthState.user,
+			{
+				setSaveStatus: (status) => saveStatus = status,
+				clearStatusResetTimeout: () => {
+					if (statusResetTimeout) {
+						clearTimeout(statusResetTimeout);
+					}
+				},
+				setStatusResetTimeout: (timeoutId) => statusResetTimeout = timeoutId
 			}
-			
-			const savedDesign = await response.json();
-			
-			saveStatus = SaveStatus.SAVED;
-			
-			// Reset to idle after 2 seconds
-			setTimeout(() => {
-				if (saveStatus === SaveStatus.SAVED) {
-					saveStatus = SaveStatus.IDLE;
-				}
-			}, 2000);
-			
-		} catch (error) {
-			console.error('Failed to save design:', error);
-			saveStatus = SaveStatus.ERROR;
-			
-			// Show error for longer
-			setTimeout(() => {
-				if (saveStatus === SaveStatus.ERROR) {
-					saveStatus = SaveStatus.IDLE;
-				}
-			}, 5000);
-		}
+		);
 	}
 
-	async function createNewDesign() {
-		// Use get() to access store value in Svelte 5
-		const currentAuthState = $authStore;
-		if (!currentAuthState.user) {
-			console.error('Cannot create design: user not authenticated');
-			saveStatus = SaveStatus.ERROR;
-			return;
-		}
 
-		try {
-			saveStatus = SaveStatus.SAVING;
-			
-			const designData = {
-				title: designTitle,
-				pages: zineStore.exportPages($zineStore)
-			};
-			
-			
-			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BASE);
-			
-			const response = await fetch(url, {
-				method: 'POST',
-				...FETCH_OPTIONS.WITH_JSON,
-				body: JSON.stringify(designData)
-			});
-			
-			
-			if (!response.ok) {
-				const errorText = await response.text();
-				console.error('Create failed with response:', errorText);
-				throw new Error(`Failed to create design: ${response.status} - ${errorText}`);
-			}
-			
-			const newDesign = await response.json();
-			console.log('New design created:', newDesign);
-			
-			currentDesignId = newDesign.id;
-			
-			// Update URL without reload
-			const url2 = new URL(window.location.href);
-			url2.searchParams.set('id', newDesign.id);
-			window.history.replaceState({}, '', url2);
-			console.log('URL updated to:', url2.toString());
-			
-			saveStatus = SaveStatus.SAVED;
-			
-			// Reset to idle after 2 seconds
-			setTimeout(() => {
-				if (saveStatus === SaveStatus.SAVED) {
-					saveStatus = SaveStatus.IDLE;
-				}
-			}, 2000);
-			
-		} catch (error) {
-			console.error('Failed to create design:', error);
-			saveStatus = SaveStatus.ERROR;
-			
-			// Show error for longer
-			setTimeout(() => {
-				if (saveStatus === SaveStatus.ERROR) {
-					saveStatus = SaveStatus.IDLE;
-				}
-			}, 5000);
-		}
-	}
-
-	function scheduleAutoSave() {
-		if (autoSaveTimeout) {
-			clearTimeout(autoSaveTimeout);
-		}
-		
-		autoSaveTimeout = setTimeout(() => {
-			saveDesign();
-		}, 2000); // Auto-save after 2 seconds of inactivity
-	}
-
-	function handleManualSave() {
-		if (autoSaveTimeout) {
-			clearTimeout(autoSaveTimeout);
-		}
-		saveDesign();
-	}
+	// Create auto-save and manual save handlers using the service
+	const autoSaveTimeoutRef = { current: autoSaveTimeout };
+	const scheduleAutoSave = designService.createAutoSaveHandler(saveDesign, autoSaveTimeoutRef);
+	const handleManualSave = designService.createManualSaveHandler(saveDesign, autoSaveTimeoutRef);
+	
+	// Sync the timeout ref with the state variable
+	$effect(() => {
+		autoSaveTimeoutRef.current = autoSaveTimeout;
+	});
 
 	// Handle keyboard shortcuts
 	function handleKeyDown(event: KeyboardEvent) {

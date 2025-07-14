@@ -9,6 +9,8 @@ impl ApiRoutes {
     // Auth routes
     pub const AUTH_GOOGLE: &'static str = "/auth/google";
     pub const AUTH_GOOGLE_CALLBACK: &'static str = "/auth/google/callback";
+    pub const AUTH_GITHUB: &'static str = "/auth/github";
+    pub const AUTH_GITHUB_CALLBACK: &'static str = "/auth/github/callback";
     pub const API_AUTH_ME: &'static str = "/api/auth/me";
     pub const API_AUTH_LOGOUT: &'static str = "/api/auth/logout";
     

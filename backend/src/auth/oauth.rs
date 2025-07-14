@@ -20,6 +20,15 @@ pub struct GoogleUserInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct GitHubUserInfo {
+    pub id: u64,
+    pub login: String,
+    pub email: Option<String>,
+    pub name: Option<String>,
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AuthResponse {
     pub token: String,
     pub user: UserResponse,
@@ -36,15 +45,17 @@ pub struct UserResponse {
 #[derive(Clone)]
 pub struct OAuthConfig {
     pub google_client: BasicClient,
+    pub github_client: BasicClient,
 }
 
 impl OAuthConfig {
     pub fn from_secrets(secrets: &shuttle_runtime::SecretStore) -> Result<Self, Box<dyn std::error::Error>> {
+        // Google OAuth setup
         let google_client_id = secrets.get("GOOGLE_CLIENT_ID")
             .ok_or("GOOGLE_CLIENT_ID must be set")?;
         let google_client_secret = secrets.get("GOOGLE_CLIENT_SECRET")
             .ok_or("GOOGLE_CLIENT_SECRET must be set")?;
-        let redirect_url = secrets.get("GOOGLE_REDIRECT_URL")
+        let google_redirect_url = secrets.get("GOOGLE_REDIRECT_URL")
             .unwrap_or_else(|| "http://localhost:8000/auth/google/callback".to_string());
 
         let google_client = BasicClient::new(
@@ -53,18 +64,35 @@ impl OAuthConfig {
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
             Some(TokenUrl::new("https://www.googleapis.com/oauth2/v4/token".to_string())?),
         )
-        .set_redirect_uri(RedirectUrl::new(redirect_url)?);
+        .set_redirect_uri(RedirectUrl::new(google_redirect_url)?);
 
-        Ok(Self { google_client })
+        // GitHub OAuth setup
+        let github_client_id = secrets.get("GITHUB_CLIENT_ID")
+            .ok_or("GITHUB_CLIENT_ID must be set")?;
+        let github_client_secret = secrets.get("GITHUB_CLIENT_SECRET")
+            .ok_or("GITHUB_CLIENT_SECRET must be set")?;
+        let github_redirect_url = secrets.get("GITHUB_REDIRECT_URL")
+            .unwrap_or_else(|| "http://localhost:8000/auth/github/callback".to_string());
+
+        let github_client = BasicClient::new(
+            ClientId::new(github_client_id),
+            Some(ClientSecret::new(github_client_secret)),
+            AuthUrl::new("https://github.com/login/oauth/authorize".to_string())?,
+            Some(TokenUrl::new("https://github.com/login/oauth/access_token".to_string())?),
+        )
+        .set_redirect_uri(RedirectUrl::new(github_redirect_url)?);
+
+        Ok(Self { google_client, github_client })
     }
 
     #[allow(dead_code)]
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        // Google OAuth setup
         let google_client_id = std::env::var("GOOGLE_CLIENT_ID")
             .expect("GOOGLE_CLIENT_ID must be set");
         let google_client_secret = std::env::var("GOOGLE_CLIENT_SECRET")
             .expect("GOOGLE_CLIENT_SECRET must be set");
-        let redirect_url = std::env::var("GOOGLE_REDIRECT_URL")
+        let google_redirect_url = std::env::var("GOOGLE_REDIRECT_URL")
             .unwrap_or_else(|_| "http://localhost:8000/auth/google/callback".to_string());
 
         let google_client = BasicClient::new(
@@ -73,9 +101,25 @@ impl OAuthConfig {
             AuthUrl::new("https://accounts.google.com/o/oauth2/v2/auth".to_string())?,
             Some(TokenUrl::new("https://www.googleapis.com/oauth2/v4/token".to_string())?),
         )
-        .set_redirect_uri(RedirectUrl::new(redirect_url)?);
+        .set_redirect_uri(RedirectUrl::new(google_redirect_url)?);
 
-        Ok(Self { google_client })
+        // GitHub OAuth setup
+        let github_client_id = std::env::var("GITHUB_CLIENT_ID")
+            .expect("GITHUB_CLIENT_ID must be set");
+        let github_client_secret = std::env::var("GITHUB_CLIENT_SECRET")
+            .expect("GITHUB_CLIENT_SECRET must be set");
+        let github_redirect_url = std::env::var("GITHUB_REDIRECT_URL")
+            .unwrap_or_else(|_| "http://localhost:8000/auth/github/callback".to_string());
+
+        let github_client = BasicClient::new(
+            ClientId::new(github_client_id),
+            Some(ClientSecret::new(github_client_secret)),
+            AuthUrl::new("https://github.com/login/oauth/authorize".to_string())?,
+            Some(TokenUrl::new("https://github.com/login/oauth/access_token".to_string())?),
+        )
+        .set_redirect_uri(RedirectUrl::new(github_redirect_url)?);
+
+        Ok(Self { google_client, github_client })
     }
 }
 

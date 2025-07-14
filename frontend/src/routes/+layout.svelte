@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
-	import { authService } from '$lib/stores/auth';
+	import { authService } from '$lib/services/authService';
 
 	let { children } = $props();
 

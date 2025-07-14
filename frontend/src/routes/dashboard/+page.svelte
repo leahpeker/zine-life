@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { authStore, authService } from '$lib/stores/auth';
+	import { authStore } from '$lib/stores/auth';
+	import { authService } from '$lib/services/authService';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Header from '$lib/components/layout/Header.svelte';
