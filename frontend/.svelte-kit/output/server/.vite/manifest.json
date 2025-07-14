@@ -8,20 +8,13 @@
       "_internal.js"
     ]
   },
-  "_CanvasThumbnail.js": {
-    "file": "chunks/CanvasThumbnail.js",
-    "name": "CanvasThumbnail",
-    "imports": [
-      "_index.js"
-    ]
-  },
-  "_Header.js": {
-    "file": "chunks/Header.js",
-    "name": "Header",
+  "_NewDesignButton.js": {
+    "file": "chunks/NewDesignButton.js",
+    "name": "NewDesignButton",
     "imports": [
       "_index.js",
-      "_client.js",
-      "_auth.js"
+      "_pageStore.js",
+      "_client.js"
     ]
   },
   "_auth.js": {
@@ -66,6 +59,16 @@
       "_index.js"
     ]
   },
+  "_pageStore.js": {
+    "file": "chunks/pageStore.js",
+    "name": "pageStore",
+    "imports": [
+      "_index.js",
+      "_client.js",
+      "_auth.js",
+      "_index2.js"
+    ]
+  },
   "node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte": {
     "file": "entries/fallbacks/error.svelte.js",
     "name": "entries/fallbacks/error.svelte",
@@ -98,7 +101,7 @@
       "_auth.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.Dkv3rujw.css"
+      "_app/immutable/assets/_layout.DGqbpQKd.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -110,8 +113,8 @@
       "_index.js",
       "_client.js",
       "_auth.js",
-      "_Header.js",
-      "_CanvasThumbnail.js"
+      "_pageStore.js",
+      "_NewDesignButton.js"
     ]
   },
   "src/routes/dashboard/+page.svelte": {
@@ -123,9 +126,9 @@
       "_index.js",
       "_auth.js",
       "_client.js",
-      "_Header.js",
+      "_pageStore.js",
       "_http.js",
-      "_CanvasThumbnail.js"
+      "_NewDesignButton.js"
     ]
   },
   "src/routes/editor/+page.svelte": {
@@ -136,10 +139,13 @@
     "imports": [
       "_index.js",
       "_index2.js",
-      "_Header.js",
+      "_pageStore.js",
       "_client.js",
       "_http.js",
       "_auth.js"
+    ],
+    "css": [
+      "_app/immutable/assets/_page.CMpPs6TI.css"
     ]
   }
 }

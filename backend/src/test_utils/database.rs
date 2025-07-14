@@ -55,7 +55,7 @@ pub mod test_data {
                     "fill": "#ff0000"
                 }
             ],
-            "textElements": [],
+            "texts": [],
             "images": []
         });
 
@@ -71,7 +71,7 @@ pub mod test_data {
             "canvasHeight": 400,
             "canvasBackgroundColor": "#ffffff",
             "shapes": [],
-            "textElements": [],
+            "texts": [],
             "images": []
         }]);
 

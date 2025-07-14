@@ -51,7 +51,7 @@ async fn test_design_creation() {
     
     // Check JSON structure
     assert!(design.canvas_data["shapes"].is_array());
-    assert!(design.canvas_data["textElements"].is_array());
+    assert!(design.canvas_data["texts"].is_array());
     assert!(design.canvas_data["images"].is_array());
 }
 

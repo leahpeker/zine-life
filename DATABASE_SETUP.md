@@ -129,7 +129,7 @@ Current: **JSON blob approach** ✅ IMPLEMENTED
 ```json
 {
   "shapes": [...],
-  "textElements": [...], 
+  "texts": [...], 
   "images": [...]
 }
 ```

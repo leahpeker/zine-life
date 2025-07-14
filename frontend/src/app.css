@@ -37,8 +37,7 @@
 .photocopied {
   filter: contrast(2) brightness(0.9);
   background-image: 
-    radial-gradient(circle at 20% 50%, transparent 20%, rgba(255,255,255,0.03) 21%, rgba(255,255,255,0.03) 34%, transparent 35%, transparent),
-    linear-gradient(0deg, rgba(255,255,255,0.02) 50%, transparent 50%);
+    radial-gradient(circle at 20% 50%, transparent 20%, rgba(255,255,255,0.03) 21%, rgba(255,255,255,0.03) 34%, transparent 35%, transparent);
 }
 
 .glitch-text {

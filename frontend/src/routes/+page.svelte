@@ -4,17 +4,16 @@
 	import { authStore, authService } from '$lib/stores/auth';
 	import Header from '$lib/components/layout/Header.svelte';
 	import { buildApiUrl, API_ENDPOINTS } from '$lib/constants/api';
+	import { FETCH_OPTIONS } from '$lib/constants/http';
 	import { ROUTES } from '$lib/constants/routes';
 	import { UI_TEXT } from '$lib/constants/ui-text';
 	import SimpleThumbnail from '$lib/components/design/SimpleThumbnail.svelte';
+	import NewDesignButton from '$lib/components/layout/NewDesignButton.svelte';
 
 	let recentDesigns = [];
 	let publicDesigns = [];
 	let loading = false;
 
-	function startNewDesign() {
-		goto(ROUTES.EDITOR);
-	}
 
 	function goToDashboard() {
 		goto(ROUTES.DASHBOARD);
@@ -79,7 +78,7 @@
 <!-- Header -->
 <Header />
 
-<main class="bg-black min-h-screen photocopied scan-lines relative" style="margin-top: 64px;">
+<main class="bg-black min-h-screen photocopied relative" style="margin-top: 64px;">
 	{#if $authStore.user}
 		<!-- Logged-in User View: Personal Dashboard -->
 		<section class="bg-black py-12 px-4">
@@ -93,13 +92,11 @@
 				
 				<!-- Action Buttons -->
 				<div class="flex flex-wrap gap-4 mb-12">
-					<button 
-						onclick={startNewDesign}
+					<NewDesignButton 
 						class="bg-green-400 text-black px-8 py-3 text-xl font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-2 border-green-400 font-industrial"
-						aria-label="Create a new design in the editor"
 					>
 						NEW DESIGN
-					</button>
+					</NewDesignButton>
 					<button 
 						onclick={goToDashboard}
 						class="bg-transparent text-green-400 px-8 py-3 text-xl font-black tracking-wide border-2 border-green-400 hover:bg-green-400 hover:text-black transition-colors font-industrial"
@@ -122,13 +119,11 @@
 							<div class="text-primary text-6xl mb-4">[+]</div>
 							<h3 class="text-xl font-black text-white mb-2 font-industrial">NO DESIGNS YET</h3>
 							<p class="text-text-muted font-mono mb-4">Time to create your first underground masterpiece</p>
-							<button 
-								onclick={startNewDesign}
+							<NewDesignButton 
 								class="bg-primary text-black px-6 py-2 font-black tracking-wide transform -skew-x-6 hover:bg-primary-light transition-colors border-2 border-primary font-industrial"
-								aria-label="Start creating your first design"
 							>
 								START NOW
-							</button>
+							</NewDesignButton>
 						</div>
 					{:else}
 						<ul class="grid grid-cols-1 md:grid-cols-3 gap-6" role="list" aria-label="Recent designs">
@@ -174,13 +169,11 @@
 				</p>
 				
 				<div class="space-y-4">
-					<button 
-						onclick={startNewDesign}
+					<NewDesignButton 
 						class="bg-green-400 text-black px-12 py-4 text-2xl font-black tracking-wide transform -skew-x-6 hover:bg-green-300 transition-colors border-4 border-green-400 shadow-lg hover:shadow-green-400/50 font-industrial"
-						aria-label="Start creating underground graphics"
 					>
 						START CREATING
-					</button>
+					</NewDesignButton>
 					
 					<div class="text-gray-500 font-mono text-sm">
 						no signup required to start

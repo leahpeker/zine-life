@@ -1,7 +1,7 @@
 import "clsx";
 import "./exports.js";
 import { w as writable } from "./index2.js";
-import { U as noop } from "./index.js";
+import { Y as noop } from "./index.js";
 const SNAPSHOT_KEY = "sveltekit:snapshot";
 const SCROLL_KEY = "sveltekit:scroll";
 function create_updated_store() {

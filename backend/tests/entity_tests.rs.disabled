@@ -73,7 +73,7 @@ async fn test_design_creation() {
     // Check canvas data structure
     let canvas_data = &design.canvas_data;
     assert!(canvas_data["shapes"].is_array());
-    assert!(canvas_data["textElements"].is_array());
+    assert!(canvas_data["texts"].is_array());
     assert!(canvas_data["images"].is_array());
 
     // Check canvas size
@@ -197,7 +197,7 @@ async fn test_canvas_data_json_storage() {
                 "fill": "#red"
             }
         ],
-        "textElements": [
+        "texts": [
             {
                 "id": "text-1",
                 "x": 100,
@@ -235,7 +235,7 @@ async fn test_canvas_data_json_storage() {
 
     // Verify JSON data was stored and retrieved correctly
     assert_eq!(saved_design.canvas_data["shapes"].as_array().unwrap().len(), 2);
-    assert_eq!(saved_design.canvas_data["textElements"].as_array().unwrap().len(), 1);
+    assert_eq!(saved_design.canvas_data["texts"].as_array().unwrap().len(), 1);
     assert_eq!(saved_design.canvas_data["images"].as_array().unwrap().len(), 1);
     
     // Check specific shape data
@@ -244,7 +244,7 @@ async fn test_canvas_data_json_storage() {
     assert_eq!(first_shape["rotation"], 45);
     
     // Check text element
-    let text_element = &saved_design.canvas_data["textElements"][0];
+    let text_element = &saved_design.canvas_data["texts"][0];
     assert_eq!(text_element["text"], "Hello World");
     assert_eq!(text_element["fontSize"], 24);
 }

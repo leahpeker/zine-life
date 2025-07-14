@@ -9,6 +9,7 @@
 	import { ROUTES } from '$lib/constants/routes';
 	import { UI_TEXT } from '$lib/constants/ui-text';
 	import SimpleThumbnail from '$lib/components/design/SimpleThumbnail.svelte';
+	import NewDesignButton from '$lib/components/layout/NewDesignButton.svelte';
 
 	let designs = [];
 	let loading = true;
@@ -81,9 +82,6 @@
 		goto(ROUTES.EDITOR_WITH_ID(id));
 	}
 
-	function newDesign() {
-		goto(ROUTES.EDITOR);
-	}
 
 	function refreshDesigns() {
 		hasInitiallyFetched = false;
@@ -107,7 +105,7 @@
 <Header showBackButton={true} />
 
 <!-- Dashboard -->
-<div class="min-h-screen bg-black text-white photocopied scan-lines" style="margin-top: 64px;">
+<div class="min-h-screen bg-black text-white photocopied" style="margin-top: 64px;">
 	<div class="max-w-6xl mx-auto px-4 py-8">
 		<!-- Header -->
 		<div class="mb-8">
@@ -122,14 +120,12 @@
 		<!-- Action Bar -->
 		<div class="flex flex-wrap justify-between items-center mb-8 gap-4">
 			<!-- New Design Button -->
-			<button 
-				onclick={newDesign}
+			<NewDesignButton 
 				class="px-6 py-3 font-black tracking-wide transform -skew-x-6 transition-all border-2 font-industrial hover:brightness-110"
 				style="background-color: var(--color-primary); color: black; border-color: var(--color-primary);"
-				aria-label="Create a new design"
 			>
 				NEW DESIGN
-			</button>
+			</NewDesignButton>
 
 			<!-- Filter Buttons -->
 			<div class="flex gap-2">
@@ -190,13 +186,11 @@
 				<p class="text-text-muted font-mono mb-6">
 					{UI_TEXT.MESSAGES.EMPTY_STATE_DESCRIPTION(filter)}
 				</p>
-				<button 
-					onclick={newDesign}
+				<NewDesignButton 
 					class="bg-primary text-black px-6 py-3 font-black tracking-wide transform -skew-x-6 hover:bg-primary-light transition-colors border-2 border-primary font-industrial"
-					aria-label="Create your first design"
 				>
 					CREATE FIRST DESIGN
-				</button>
+				</NewDesignButton>
 			</div>
 		
 		<!-- Designs Grid -->

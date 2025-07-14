@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { shapes, type UserShape } from '../../lib/stores/shapeStore';
-	import { textElements, type UserText } from '../../lib/stores/textStore';
-	import { images, type UserImage } from '../../lib/stores/imageStore';
+	import { elements, isShape, isText, isImage, type Element } from '../../lib/stores/elementsStore';
+	import type { UserShape, UserText, UserImage } from '../../lib/types/elements';
 	import { history } from '../../lib/stores/historyStore';
 	import { zineStore } from '../../lib/stores/pageStore';
 	import { 
@@ -32,13 +31,12 @@
 import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	import TextEditor from '../../lib/components/editing/TextEditor.svelte';
 	import {
-		createShapeDragEndHandler,
-		createImageDragEndHandler,
+		createElementDragEndHandler,
 		createZoomHandler,
 		createPanHandlers
 	} from '../../lib/utils/canvasHandlers';
 	import { initializeApp } from '../../lib/init';
-	import { LayoutDimensions, PostPunkStyles, SaveStatus, type SaveStatusType } from '../../lib/constants';
+	import { LayoutDimensions, StyleGuide, SaveStatus, type SaveStatusType } from '../../lib/constants';
 	import { Colors } from '../../lib/core/colors';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
@@ -60,11 +58,9 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	// Handle stage ready callback
 	function handleStageReady(stage: any) {
 		stageRef = stage;
-		console.log("Stage ref handld", stageRef);
 
 	}
 
-	console.log("Stage ref", stageRef);
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
 	let downloadModalOpen = $state(false);
@@ -73,7 +69,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	let currentDesignId = $state<string | null>(null);
 	let saveStatus = $state<SaveStatusType>(SaveStatus.IDLE);
 	let isLoading = $state(false);
-	let autoSaveTimeout: NodeJS.Timeout | null = null;
+	let autoSaveTimeout: number | null = null;
 
 	// Canvas state
 	let canvasBackgroundColor = $state('#ffffff');
@@ -85,10 +81,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	// Svelte 5 derived values - computed reactively
 	const selectedElement = $derived(
 		selectedId 
-			? $shapes.find(shape => shape.id === selectedId) || 
-			  $textElements.find(text => text.id === selectedId) || 
-			  $images.find(image => image.id === selectedId) ||
-			  null
+			? $elements.find(element => element.id === selectedId) || null
 			: null
 	);
 	
@@ -96,8 +89,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 
 	// Event handlers
-	const shapeDragEndHandler = $derived(createShapeDragEndHandler(canvasZoom));
-	const imageDragEndHandler = $derived(createImageDragEndHandler(canvasZoom));
+	const elementDragEndHandler = $derived(createElementDragEndHandler(canvasZoom));
 	const zoomHandler = createZoomHandler(() => stageRef, (zoom) => canvasZoom = zoom);
 	const panHandlers = createPanHandlers();
 	
@@ -147,9 +139,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	$effect(() => {
 		// Dependencies that should trigger auto-save
 		const canvasState = {
-			shapes: $shapes,
-			textElements: $textElements,
-			images: $images,
+			elements: $elements,
 			background: canvasBackgroundColor,
 			size: { width: canvasWidth, height: canvasHeight },
 			title: designTitle
@@ -163,7 +153,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 	// Check authentication on mount
 	onMount(() => {
-		console.log('Editor mounted, checking authentication');
 		authService.checkAuth();
 	});
 
@@ -171,7 +160,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	$effect(() => {
 		const authState = $authStore;
 		if (!authState.loading && !authState.user) {
-			console.log('User not authenticated, redirecting to home');
 			goto('/');
 		}
 	});
@@ -194,8 +182,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	const resetCanvasHandler = handleResetCanvas((id) => selectedId = id);
 	const titleChangeHandler = handleTitleChange((title) => designTitle = title);
 
-	// Create text editing handlers
-	const textElementDragEndHandler = $derived(handleTextElementDragEnd(canvasZoom));
 	
 	let textEditorRef = $state<any>();
 
@@ -223,14 +209,11 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 		try {
 			isLoading = true;
 			saveStatus = SaveStatus.IDLE;
-			console.log('Loading design with ID:', designId);
 			
 			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(designId));
-			console.log('Loading from URL:', url);
 			
 			const response = await fetch(url, FETCH_OPTIONS.DEFAULT);
 			
-			console.log('Load response status:', response.status);
 			
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -239,7 +222,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			}
 			
 			const design = await response.json();
-			console.log('Design loaded:', design);
 			
 			// Update design state
 			designTitle = design.title;
@@ -247,9 +229,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			// Load multi-page design
 			if (design.pages && design.pages.length > 0) {
 				zineStore.importPages(design.pages);
-				console.log('Loaded multi-page design with', design.pages.length, 'pages');
 			} else {
-				console.log('No pages found in design, creating default page');
 				zineStore.reset();
 			}
 			
@@ -277,23 +257,19 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 		}
 
 		if (!currentDesignId) {
-			console.log('No current design ID, creating new design');
 			return await createNewDesign();
 		}
 		
 		try {
 			saveStatus = SaveStatus.SAVING;
-			console.log('Saving design with ID:', currentDesignId);
 			
 			const designData = {
 				title: designTitle,
 				pages: zineStore.exportPages($zineStore)
 			};
 			
-			console.log('Design data being saved:', designData);
 			
 			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BY_ID(currentDesignId));
-			console.log('Saving to URL:', url);
 			
 			const response = await fetch(url, {
 				method: 'PUT',
@@ -301,7 +277,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 				body: JSON.stringify(designData)
 			});
 			
-			console.log('Save response status:', response.status);
 			
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -310,7 +285,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			}
 			
 			const savedDesign = await response.json();
-			console.log('Design saved successfully:', savedDesign);
 			
 			saveStatus = SaveStatus.SAVED;
 			
@@ -345,17 +319,14 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 		try {
 			saveStatus = SaveStatus.SAVING;
-			console.log('Creating new design');
 			
 			const designData = {
 				title: designTitle,
 				pages: zineStore.exportPages($zineStore)
 			};
 			
-			console.log('New design data:', designData);
 			
 			const url = buildApiUrl(API_ENDPOINTS.DESIGNS.BASE);
-			console.log('Creating design at URL:', url);
 			
 			const response = await fetch(url, {
 				method: 'POST',
@@ -363,7 +334,6 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 				body: JSON.stringify(designData)
 			});
 			
-			console.log('Create response status:', response.status);
 			
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -432,7 +402,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="fixed inset-0 {PostPunkStyles.DarkBg}">
+<div class="fixed inset-0 {StyleGuide.DarkBg}">
 
 	<!-- Main Header -->
 	<Header />
@@ -475,7 +445,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 				/>
 			{:else}
 				<!-- Canvas Edit Panel when nothing is selected -->
-				<div class="h-full {PostPunkStyles.PanelBg} px-6 py-3 border-b border-border">
+				<div class="h-full {StyleGuide.PanelBg} px-6 py-3 border-b border-border">
 					<div class="flex h-full items-center gap-6 overflow-x-auto">
 						<CanvasEditPanel
 							backgroundColor={canvasBackgroundColor}
@@ -515,18 +485,11 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 				onMouseDown={panHandlers.handleMouseDown}
 				onMouseMove={panHandlers.handleMouseMove}
 				onMouseUp={panHandlers.handleMouseUp}
-				onShapeDragEnd={shapeDragEndHandler}
-				onImageDragEnd={imageDragEndHandler}
 				onElementClick={(id) => {
 					selectedId = id;
 					if (updateTransformer) updateTransformer();
 				}}
-				onTextElementClick={(id) => {
-					selectedId = id;
-					if (updateTransformer) updateTransformer();
-				}}
 				onTextElementDblClick={handleTextElementDblClick}
-				onTextElementDragEnd={textElementDragEndHandler}
 			/>
 		</div>
 	</div>
@@ -535,7 +498,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	<TextEditor 
 		bind:this={textEditorRef}
 		{editingTextId}
-		textElements={$textElements}
+		texts={$elements.filter(isText)}
 		onClose={handleCloseTextEditor}
 	/>
 

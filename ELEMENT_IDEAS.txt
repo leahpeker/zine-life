@@ -1,0 +1,91 @@
+# Zine Element Types - Ideas for Future Implementation
+
+## Text & Typography Elements
+- Speech Bubbles - Various styles (round, spiky, thought bubbles)
+- Text Banners/Ribbons - Flowing banner shapes to hold text
+- Stencil Text - Pre-made stencil letter templates
+- Handwritten Fonts - Casual, messy text styles
+- Stamps/Labels - Rectangular labels with torn edges
+
+## DIY/Underground Graphics
+- Torn Paper Effects - Ripped edges, photocopied textures
+- Tape Strips - Masking tape, duct tape pieces
+- Safety Pins - Punk aesthetic connectors
+- Staples - Corner staples, binding elements
+- Paper Clips - Various sizes and styles
+- Thumbtacks/Push Pins - Bulletin board feel
+
+## Decorative Elements
+- Borders & Frames - Hand-drawn, rough edges
+- Dividers - Zigzag lines, dotted separators, barbed wire
+- Corner Brackets - Photo corner holders
+- Splashes/Splatters - Ink blots, paint drips
+- Scribbles/Doodles - Margin decorations
+
+## Punk/Underground Iconography
+- Lightning Bolts - Classic punk symbol
+- Skulls - Various skull designs
+- Roses with Thorns - Gothic romance
+- Fists - Raised fist, power symbols
+- Chains - Decorative chain links
+- Spikes/Studs - Punk aesthetic elements
+
+## Practical Zine Elements
+- Page Numbers - Stylized numbering
+- Column Dividers - Newspaper-style columns
+- Pull Quotes - Highlighted quote boxes
+- QR Codes - Modern connectivity
+- Copyright/Credits - Small print templates
+- Folding Guides - Dotted fold lines for print
+
+## Photo/Image Frames
+- Polaroid Frames - Instant photo look
+- Film Strips - 35mm film aesthetic
+- TV/Monitor Frames - Retro screen borders
+- Torn Photo Edges - Distressed photo effects
+
+## IMPLEMENTATION STATUS (UPDATED 2025-07-12)
+
+### ✅ COMPLETED:
+- **Stamps/Labels** - FULLY IMPLEMENTED as separate element type with 6 varieties:
+  - Rubber Stamp (rectangular, dashed border)
+  - Circle Stamp (postmark style)
+  - Diamond Stamp (angled diamond)
+  - Bang Stamp (starburst/explosion)
+  - Approval Stamp (with checkmark visual)
+  - Rejected Stamp (with X mark visual)
+
+### 🔄 IN PROGRESS:
+- **Speech Bubbles** - Partially implemented (needs completion)
+- **Text Banners/Ribbons** - Partially implemented (needs completion)
+
+### 🚨 KNOWN ISSUES:
+- **Stamp Rendering** - Stamps appear in sidebar but don't render on canvas (element creation pipeline needs fixes)
+- **Text Editing** - Button wrapper prevents text editing functionality
+
+## Priority Suggestions (UPDATED)
+High Priority (next to implement):
+1. Fix stamp rendering pipeline
+2. Complete Speech Bubbles implementation  
+3. Complete Text Banners/Ribbons
+4. Tape Strips - Essential zine element
+5. Lightning Bolts - Classic punk symbol
+
+Medium Priority:
+- Safety Pins - Punk aesthetic
+- Torn Paper Effects - DIY feel
+- Dividers (zigzag, barbed wire)
+- Skulls
+- Polaroid Frames
+
+Low Priority (more complex):
+- Stencil Text
+- Film Strips
+- QR Codes
+- Handwritten Fonts
+
+## TECHNICAL NOTES:
+- Stamps are properly registered in element system but need canvas rendering fixes
+- Text element types (speech bubbles, banners) need specialized Konva components
+- Element creation pipeline needs stamp store integration
+- MultiPageCanvas needs stamp element handling

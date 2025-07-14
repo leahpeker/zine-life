@@ -1,4 +1,4 @@
-import "clsx";
+import { clsx as clsx$1 } from "clsx";
 const BROWSER = false;
 var is_array = Array.isArray;
 var index_of = Array.prototype.indexOf;
@@ -75,6 +75,8 @@ let tracing_mode_flag = false;
 const HYDRATION_START = "[";
 const HYDRATION_END = "]";
 const HYDRATION_ERROR = {};
+const ELEMENT_IS_NAMESPACED = 1;
+const ELEMENT_PRESERVE_ATTRIBUTE_CASE = 1 << 1;
 const UNINITIALIZED = Symbol();
 function lifecycle_outside_component(name) {
   {
@@ -1219,6 +1221,44 @@ const STATUS_MASK = -7169;
 function set_signal_status(signal, status) {
   signal.f = signal.f & STATUS_MASK | status;
 }
+const DOM_BOOLEAN_ATTRIBUTES = [
+  "allowfullscreen",
+  "async",
+  "autofocus",
+  "autoplay",
+  "checked",
+  "controls",
+  "default",
+  "disabled",
+  "formnovalidate",
+  "hidden",
+  "indeterminate",
+  "inert",
+  "ismap",
+  "loop",
+  "multiple",
+  "muted",
+  "nomodule",
+  "novalidate",
+  "open",
+  "playsinline",
+  "readonly",
+  "required",
+  "reversed",
+  "seamless",
+  "selected",
+  "webkitdirectory",
+  "defer",
+  "disablepictureinpicture",
+  "disableremoteplayback"
+];
+function is_boolean_attribute(name) {
+  return DOM_BOOLEAN_ATTRIBUTES.includes(name);
+}
+const PASSIVE_EVENTS = ["touchstart", "touchmove"];
+function is_passive_event(name) {
+  return PASSIVE_EVENTS.includes(name);
+}
 const ATTR_REGEX = /[&"<]/g;
 const CONTENT_REGEX = /[&<]/g;
 function escape_html(value, is_attr) {
@@ -1247,8 +1287,34 @@ function attr(name, value, is_boolean = false) {
   const assignment = is_boolean ? "" : `="${escape_html(normalized, true)}"`;
   return ` ${name}${assignment}`;
 }
+function clsx(value) {
+  if (typeof value === "object") {
+    return clsx$1(value);
+  } else {
+    return value ?? "";
+  }
+}
+const whitespace = [..." 	\n\r\f \v\uFEFF"];
 function to_class(value, hash, directives) {
   var classname = value == null ? "" : "" + value;
+  if (directives) {
+    for (var key in directives) {
+      if (directives[key]) {
+        classname = classname ? classname + " " + key : key;
+      } else if (classname.length) {
+        var len = key.length;
+        var a = 0;
+        while ((a = classname.indexOf(key, a)) >= 0) {
+          var b = a + len;
+          if ((a === 0 || whitespace.includes(classname[a - 1])) && (b === classname.length || whitespace.includes(classname[b]))) {
+            classname = (a === 0 ? "" : classname.substring(0, a)) + classname.substring(b + 1);
+          } else {
+            a = b;
+          }
+        }
+      }
+    }
+  }
   return classname === "" ? null : classname;
 }
 function to_style(value, styles) {
@@ -1361,6 +1427,7 @@ function props_id_generator(prefix) {
   let uid = 1;
   return () => `${prefix}s${uid++}`;
 }
+const INVALID_ATTR_NAME_CHAR_REGEX = /[\s'">/=\u{FDD0}-\u{FDEF}\u{FFFE}\u{FFFF}\u{1FFFE}\u{1FFFF}\u{2FFFE}\u{2FFFF}\u{3FFFE}\u{3FFFF}\u{4FFFE}\u{4FFFF}\u{5FFFE}\u{5FFFF}\u{6FFFE}\u{6FFFF}\u{7FFFE}\u{7FFFF}\u{8FFFE}\u{8FFFF}\u{9FFFE}\u{9FFFF}\u{AFFFE}\u{AFFFF}\u{BFFFE}\u{BFFFF}\u{CFFFE}\u{CFFFF}\u{DFFFE}\u{DFFFF}\u{EFFFE}\u{EFFFF}\u{FFFFE}\u{FFFFF}\u{10FFFE}\u{10FFFF}]/u;
 let on_destroy = [];
 function render(component, options = {}) {
   const payload = new Payload(options.idPrefix ? options.idPrefix + "-" : "");
@@ -1394,11 +1461,47 @@ function head(payload, fn) {
   fn(head_payload);
   head_payload.out += BLOCK_CLOSE;
 }
+function spread_attributes(attrs, css_hash, classes, styles, flags = 0) {
+  if (attrs.class) {
+    attrs.class = clsx(attrs.class);
+  }
+  let attr_str = "";
+  let name;
+  const is_html = (flags & ELEMENT_IS_NAMESPACED) === 0;
+  const lowercase = (flags & ELEMENT_PRESERVE_ATTRIBUTE_CASE) === 0;
+  for (name in attrs) {
+    if (typeof attrs[name] === "function") continue;
+    if (name[0] === "$" && name[1] === "$") continue;
+    if (INVALID_ATTR_NAME_CHAR_REGEX.test(name)) continue;
+    var value = attrs[name];
+    if (lowercase) {
+      name = name.toLowerCase();
+    }
+    attr_str += attr(name, value, is_html && is_boolean_attribute(name));
+  }
+  return attr_str;
+}
+function spread_props(props) {
+  const merged_props = {};
+  let key;
+  for (let i = 0; i < props.length; i++) {
+    const obj = props[i];
+    for (key in obj) {
+      const desc = Object.getOwnPropertyDescriptor(obj, key);
+      if (desc) {
+        Object.defineProperty(merged_props, key, desc);
+      } else {
+        merged_props[key] = obj[key];
+      }
+    }
+  }
+  return merged_props;
+}
 function stringify(value) {
   return typeof value === "string" ? value : value == null ? "" : value + "";
 }
 function attr_class(value, hash, directives) {
-  var result = to_class(value);
+  var result = to_class(value, hash, directives);
   return result ? ` class="${escape_html(result, true)}"` : "";
 }
 function attr_style(value, directives) {
@@ -1443,29 +1546,33 @@ function maybe_selected(payload, value) {
   return value === payload.select_value ? " selected" : "";
 }
 export {
-  setContext as A,
+  push as A,
   BROWSER as B,
-  pop as C,
-  getContext as D,
-  escape_html as E,
-  store_get as F,
-  head as G,
+  setContext as C,
+  pop as D,
+  getContext as E,
+  escape_html as F,
+  store_get as G,
   HYDRATION_ERROR as H,
-  ensure_array_like as I,
-  attr as J,
-  stringify as K,
+  head as I,
+  ensure_array_like as J,
+  attr as K,
   LEGACY_PROPS as L,
-  unsubscribe_stores as M,
-  attr_class as N,
+  stringify as M,
+  unsubscribe_stores as N,
   attr_style as O,
-  current_component as P,
+  attr_class as P,
   bind_props as Q,
-  maybe_selected as R,
-  copy_payload as S,
-  assign_payload as T,
-  noop as U,
-  safe_not_equal as V,
-  subscribe_to_store as W,
+  spread_attributes as R,
+  spread_props as S,
+  copy_payload as T,
+  assign_payload as U,
+  clsx as V,
+  maybe_selected as W,
+  current_component as X,
+  noop as Y,
+  safe_not_equal as Z,
+  subscribe_to_store as _,
   set_active_effect as a,
   active_effect as b,
   active_reaction as c,
@@ -1480,16 +1587,16 @@ export {
   clear_text_content as l,
   array_from as m,
   component_root as n,
-  create_text as o,
-  branch as p,
-  push$1 as q,
-  component_context as r,
+  is_passive_event as o,
+  create_text as p,
+  branch as q,
+  push$1 as r,
   set_active_reaction as s,
-  pop$1 as t,
-  set as u,
-  get as v,
-  flushSync as w,
-  mutable_source as x,
-  render as y,
-  push as z
+  component_context as t,
+  pop$1 as u,
+  set as v,
+  get as w,
+  flushSync as x,
+  mutable_source as y,
+  render as z
 };
