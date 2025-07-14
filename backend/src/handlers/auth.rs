@@ -46,9 +46,18 @@ pub async fn get_current_user_info(
 
 // POST /api/auth/logout - Logout (invalidate session)
 pub async fn logout() -> Result<HttpResponse> {
-    // For now, just return success - client should remove the token
-    // In a more complex setup, we could invalidate the session in the database
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "message": "Logged out successfully"
-    })))
+    // Clear the auth cookie by setting it to expire immediately
+    Ok(HttpResponse::Ok()
+        .cookie(
+            actix_web::cookie::Cookie::build("auth_token", "")
+                .http_only(true)
+                .secure(false) // Set to true in production with HTTPS
+                .same_site(actix_web::cookie::SameSite::Lax)
+                .path("/")
+                .max_age(actix_web::cookie::time::Duration::seconds(0)) // Expire immediately
+                .finish()
+        )
+        .json(serde_json::json!({
+            "message": "Logged out successfully"
+        })))
 }

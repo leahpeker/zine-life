@@ -14,7 +14,7 @@ mod constants;
 mod test_utils;
 
 use migrations::Migrator;
-use auth::{OAuthConfig, google_login, google_callback};
+use auth::{OAuthConfig, google_login, google_callback, github_login, github_callback};
 use handlers::{designs, auth as auth_handlers};
 use constants::{
     api_routes::ApiRoutes,
@@ -90,6 +90,8 @@ async fn main(
                     // Auth routes
                     .route(ApiRoutes::AUTH_GOOGLE, web::get().to(google_login))
                     .route(ApiRoutes::AUTH_GOOGLE_CALLBACK, web::get().to(google_callback))
+                    .route(ApiRoutes::AUTH_GITHUB, web::get().to(github_login))
+                    .route(ApiRoutes::AUTH_GITHUB_CALLBACK, web::get().to(github_callback))
                     .route(ApiRoutes::API_AUTH_ME, web::get().to(auth_handlers::get_current_user_info))
                     .route(ApiRoutes::API_AUTH_LOGOUT, web::post().to(auth_handlers::logout))
                     // Design routes
