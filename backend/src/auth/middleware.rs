@@ -1,8 +1,8 @@
-use actix_web::{dev::ServiceRequest, Error, HttpMessage, web};
-use actix_web::error::{ErrorUnauthorized, ErrorInternalServerError};
-use sea_orm::{DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter};
-use crate::entities::{user, session};
-use crate::auth::jwt::{verify_jwt_token, JwtClaims};
+use crate::auth::jwt::{JwtClaims, verify_jwt_token};
+use crate::entities::{session, user};
+use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
+use actix_web::{Error, HttpMessage, dev::ServiceRequest, web};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 #[allow(dead_code)]
@@ -23,12 +23,12 @@ pub async fn auth_middleware(
         .ok_or_else(|| ErrorUnauthorized("Invalid Authorization header format"))?;
 
     // Verify JWT token
-    let claims = verify_jwt_token(token)
-        .map_err(|_| ErrorUnauthorized("Invalid or expired token"))?;
+    let claims =
+        verify_jwt_token(token).map_err(|_| ErrorUnauthorized("Invalid or expired token"))?;
 
     // Parse user ID
-    let user_id = Uuid::parse_str(&claims.sub)
-        .map_err(|_| ErrorUnauthorized("Invalid user ID in token"))?;
+    let user_id =
+        Uuid::parse_str(&claims.sub).map_err(|_| ErrorUnauthorized("Invalid user ID in token"))?;
 
     // Verify session exists and is valid
     let session = session::Entity::find()
@@ -60,18 +60,21 @@ pub async fn auth_middleware(
 }
 
 // Helper function to extract current user from request (works with both cookies and headers)
-pub async fn get_current_user(req: &actix_web::HttpRequest, db: &DatabaseConnection) -> Option<user::Model> {
+pub async fn get_current_user(
+    req: &actix_web::HttpRequest,
+    db: &DatabaseConnection,
+) -> Option<user::Model> {
     tracing::info!("get_current_user called");
-    
+
     // First check if user is already in extensions (from middleware)
     if let Some(user) = req.extensions().get::<user::Model>() {
         tracing::info!("User found in extensions: {}", user.id);
         return Some(user.clone());
     }
-    
+
     // Log all cookies for debugging
     tracing::info!("Cookies in request: {:?}", req.cookies());
-    
+
     // If not in extensions, try to get from cookie
     if let Some(cookie) = req.cookie("auth_token") {
         tracing::info!("Found auth_token cookie: {}", cookie.value());
@@ -79,7 +82,7 @@ pub async fn get_current_user(req: &actix_web::HttpRequest, db: &DatabaseConnect
             tracing::info!("JWT token verified successfully for user: {}", claims.sub);
             if let Ok(user_id) = Uuid::parse_str(&claims.sub) {
                 tracing::info!("Fetching user from database with ID: {}", user_id);
-                
+
                 // Fetch user from database
                 match user::Entity::find_by_id(user_id).one(db).await {
                     Ok(Some(user)) => {
@@ -102,7 +105,7 @@ pub async fn get_current_user(req: &actix_web::HttpRequest, db: &DatabaseConnect
     } else {
         tracing::info!("No auth_token cookie found");
     }
-    
+
     tracing::info!("No authenticated user found");
     None
 }

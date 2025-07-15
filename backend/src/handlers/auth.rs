@@ -1,11 +1,8 @@
+use crate::auth::jwt::verify_jwt_token;
+use crate::constants::{cookies::CookieNames, environment::Environment, errors::AuthErrors};
+use crate::entities::user;
 use actix_web::{HttpRequest, HttpResponse, Result, web};
 use sea_orm::{DatabaseConnection, EntityTrait};
-use crate::entities::user;
-use crate::auth::jwt::verify_jwt_token;
-use crate::constants::{
-    cookies::CookieNames,
-    errors::AuthErrors
-};
 use uuid::Uuid;
 
 // GET /api/auth/me - Get current user info
@@ -16,7 +13,11 @@ pub async fn get_current_user_info(
     // Try to get token from cookie
     let token = match req.cookie(CookieNames::AUTH_TOKEN) {
         Some(cookie) => cookie.value().to_string(),
-        None => return Err(actix_web::error::ErrorUnauthorized(AuthErrors::NOT_AUTHENTICATED)),
+        None => {
+            return Err(actix_web::error::ErrorUnauthorized(
+                AuthErrors::NOT_AUTHENTICATED,
+            ));
+        }
     };
 
     // Verify JWT token
@@ -40,22 +41,29 @@ pub async fn get_current_user_info(
         "avatar_url": user.avatar_url,
         "provider": user.provider
     });
-    
+
     Ok(HttpResponse::Ok().json(user_info))
 }
 
 // POST /api/auth/logout - Logout (invalidate session)
-pub async fn logout() -> Result<HttpResponse> {
+pub async fn logout(session: actix_session::Session) -> Result<HttpResponse> {
+    // Clear the session
+    session.clear();
+    
+    // Determine if we're in production
+    let env = Environment::from_env();
+    let is_production = env.is_production();
+    
     // Clear the auth cookie by setting it to expire immediately
     Ok(HttpResponse::Ok()
         .cookie(
             actix_web::cookie::Cookie::build("auth_token", "")
                 .http_only(true)
-                .secure(false) // Set to true in production with HTTPS
+                .secure(is_production) // Secure in production with HTTPS
                 .same_site(actix_web::cookie::SameSite::Lax)
                 .path("/")
                 .max_age(actix_web::cookie::time::Duration::seconds(0)) // Expire immediately
-                .finish()
+                .finish(),
         )
         .json(serde_json::json!({
             "message": "Logged out successfully"

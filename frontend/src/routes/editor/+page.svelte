@@ -2,7 +2,7 @@
 	import { elements, isText, type Element } from '../../lib/stores/elementsStore';
 	import { history } from '../../lib/stores/historyStore';
 	import { zineStore } from '../../lib/stores/pageStore';
-	import { 
+	import {
 		handleUpdateCanvasBackground,
 		handleToggleGrid,
 		handleUpdateZoom,
@@ -23,14 +23,16 @@
 	import MultiPageCanvas from '../../lib/components/pages/MultiPageCanvas.svelte';
 	import DownloadModal from '../../lib/components/download/DownloadModal.svelte';
 	import Header from '../../lib/components/layout/Header.svelte';
-import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
+	import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	import TextEditor from '../../lib/components/editing/TextEditor.svelte';
-	import {
-		createZoomHandler,
-		createPanHandlers
-	} from '../../lib/utils/canvasHandlers';
+	import { createZoomHandler, createPanHandlers } from '../../lib/utils/canvasHandlers';
 	import { initializeApp } from '../../lib/init';
-	import { LayoutDimensions, StyleGuide, SaveStatus, type SaveStatusType } from '../../lib/constants';
+	import {
+		LayoutDimensions,
+		StyleGuide,
+		SaveStatus,
+		type SaveStatusType
+	} from '../../lib/constants';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { authStore } from '../../lib/stores/auth';
@@ -47,17 +49,16 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	let stageRef = $state<any>();
 	let stageRefs = $state<any[]>([]);
 	let updateTransformer = $state<(() => void) | undefined>();
-	
+
 	// Handle stage ready callback
 	function handleStageReady(stage: any) {
 		stageRef = stage;
-
 	}
 
 	let editingTextId = $state<string | null>(null);
 	let designTitle = $state('Design Canvas');
 	let downloadModalOpen = $state(false);
-	
+
 	// Design save/load state
 	let currentDesignId = $state<string | null>(null);
 	let saveStatus = $state<SaveStatusType>(SaveStatus.IDLE);
@@ -74,18 +75,18 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 	// Svelte 5 derived values - computed reactively
 	const selectedElement = $derived(
-		selectedId 
-			? $elements.find(element => element.id === selectedId) || null
-			: null
+		selectedId ? $elements.find((element) => element.id === selectedId) || null : null
 	);
-	
+
 	const editBarVisible = $derived(!!selectedElement);
 
-
 	// Event handlers
-	const zoomHandler = createZoomHandler(() => stageRef, (zoom) => canvasZoom = zoom);
+	const zoomHandler = createZoomHandler(
+		() => stageRef,
+		(zoom) => (canvasZoom = zoom)
+	);
 	const panHandlers = createPanHandlers();
-	
+
 	// Set up stage ref for pan handlers
 	$effect(() => {
 		if (stageRef) {
@@ -137,7 +138,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 			size: { width: canvasWidth, height: canvasHeight },
 			title: designTitle
 		};
-		
+
 		// Only auto-save if we have a design ID and we're not currently loading
 		if (currentDesignId && !isLoading && saveStatus !== SaveStatus.SAVING) {
 			scheduleAutoSave();
@@ -159,23 +160,27 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 	// Simplified - removed complex event setup function
 
-
-
 	// Create handler functions with state setters
 	const elementSelectedHandler = $derived(handleElementSelected(canvasWidth, canvasHeight));
 	const updateElementHandler = handleUpdateElement();
-	const closeEditBarHandler = handleCloseEditBar((id) => selectedId = id);
+	const closeEditBarHandler = handleCloseEditBar((id) => (selectedId = id));
 
 	// Create canvas control handlers with state setters
-	const updateCanvasBackgroundHandler = handleUpdateCanvasBackground((color) => canvasBackgroundColor = color);
-	const toggleGridHandler = handleToggleGrid((show) => showGrid = show);
-	const updateZoomHandler = handleUpdateZoom((zoom) => canvasZoom = zoom);
-	const updateCanvasSizeHandler = handleUpdateCanvasSize((width) => canvasWidth = width, (height) => canvasHeight = height);
-	const fitToWindowHandler = $derived(handleFitToWindow(canvasWidth, canvasHeight, (zoom) => canvasZoom = zoom));
-	const resetCanvasHandler = handleResetCanvas((id) => selectedId = id);
-	const titleChangeHandler = handleTitleChange((title) => designTitle = title);
+	const updateCanvasBackgroundHandler = handleUpdateCanvasBackground(
+		(color) => (canvasBackgroundColor = color)
+	);
+	const toggleGridHandler = handleToggleGrid((show) => (showGrid = show));
+	const updateZoomHandler = handleUpdateZoom((zoom) => (canvasZoom = zoom));
+	const updateCanvasSizeHandler = handleUpdateCanvasSize(
+		(width) => (canvasWidth = width),
+		(height) => (canvasHeight = height)
+	);
+	const fitToWindowHandler = $derived(
+		handleFitToWindow(canvasWidth, canvasHeight, (zoom) => (canvasZoom = zoom))
+	);
+	const resetCanvasHandler = handleResetCanvas((id) => (selectedId = id));
+	const titleChangeHandler = handleTitleChange((title) => (designTitle = title));
 
-	
 	let textEditorRef = $state<any>();
 
 	function handleTextElementDblClick(textElement: Element) {
@@ -201,37 +206,31 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 
 	async function loadDesign(designId: string) {
 		await designService.loadDesign(designId, {
-			setIsLoading: (loading) => isLoading = loading,
-			setSaveStatus: (status) => saveStatus = status,
-			setDesignTitle: (title) => designTitle = title,
-			setSelectedId: (id) => selectedId = id
+			setIsLoading: (loading) => (isLoading = loading),
+			setSaveStatus: (status) => (saveStatus = status),
+			setDesignTitle: (title) => (designTitle = title),
+			setSelectedId: (id) => (selectedId = id)
 		});
 	}
 
 	async function saveDesign() {
 		const currentAuthState = $authStore;
-		await designService.saveDesign(
-			currentDesignId!,
-			designTitle,
-			!!currentAuthState.user,
-			{
-				setSaveStatus: (status) => saveStatus = status,
-				clearStatusResetTimeout: () => {
-					if (statusResetTimeout) {
-						clearTimeout(statusResetTimeout);
-					}
-				},
-				setStatusResetTimeout: (timeoutId) => statusResetTimeout = timeoutId
-			}
-		);
+		await designService.saveDesign(currentDesignId!, designTitle, !!currentAuthState.user, {
+			setSaveStatus: (status) => (saveStatus = status),
+			clearStatusResetTimeout: () => {
+				if (statusResetTimeout) {
+					clearTimeout(statusResetTimeout);
+				}
+			},
+			setStatusResetTimeout: (timeoutId) => (statusResetTimeout = timeoutId)
+		});
 	}
-
 
 	// Create auto-save and manual save handlers using the service
 	const autoSaveTimeoutRef = { current: autoSaveTimeout };
 	const scheduleAutoSave = designService.createAutoSaveHandler(saveDesign, autoSaveTimeoutRef);
 	const handleManualSave = designService.createManualSaveHandler(saveDesign, autoSaveTimeoutRef);
-	
+
 	// Sync the timeout ref with the state variable
 	$effect(() => {
 		autoSaveTimeoutRef.current = autoSaveTimeout;
@@ -249,15 +248,14 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 <svelte:window on:keydown={handleKeyDown} />
 
 <div class="fixed inset-0 {StyleGuide.DarkBg}">
-
 	<!-- Main Header -->
 	<Header />
-	
+
 	<!-- Editor Top Bar -->
-	<EditorTopBar 
+	<EditorTopBar
 		title={designTitle}
 		onTitleChange={titleChangeHandler}
-		onExportClick={() => downloadModalOpen = true}
+		onExportClick={() => (downloadModalOpen = true)}
 		onUndo={() => history.undo()}
 		onRedo={() => history.redo()}
 		canUndo={history.canUndo($history)}
@@ -278,10 +276,15 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	</div>
 
 	<!-- Main Canvas Area (fixed positioning, always starts at sidebar closed width) -->
-	<div class="flex h-full flex-col" style="margin-left: {LayoutDimensions.SidebarClosedWidth}; margin-top: 112px;">
-
+	<div
+		class="flex h-full flex-col"
+		style="margin-left: {LayoutDimensions.SidebarClosedWidth}; margin-top: 112px;"
+	>
 		<!-- Fixed Edit Bar -->
-		<div class="fixed z-20" style="top: 112px; left: {LayoutDimensions.SidebarClosedWidth}; right: 0; height: {LayoutDimensions.EditBarHeight};">
+		<div
+			class="fixed z-20"
+			style="top: 112px; left: {LayoutDimensions.SidebarClosedWidth}; right: 0; height: {LayoutDimensions.EditBarHeight};"
+		>
 			{#if selectedElement}
 				<EditBarComponent
 					{selectedElement}
@@ -291,7 +294,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 				/>
 			{:else}
 				<!-- Canvas Edit Panel when nothing is selected -->
-				<div class="h-full {StyleGuide.PanelBg} px-6 py-3 border-b border-border">
+				<div class="h-full {StyleGuide.PanelBg} border-border border-b px-6 py-3">
 					<div class="flex h-full items-center gap-6 overflow-x-auto">
 						<CanvasEditPanel
 							backgroundColor={canvasBackgroundColor}
@@ -312,8 +315,8 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 		</div>
 
 		<!-- Multi-Page Canvas Container -->
-		<div class="pt-8 px-4 pb-4" style="margin-top: {LayoutDimensions.EditBarHeight};">
-			<MultiPageCanvas 
+		<div class="px-4 pb-4 pt-8" style="margin-top: {LayoutDimensions.EditBarHeight};">
+			<MultiPageCanvas
 				bind:this={canvasContainerRef}
 				bind:updateTransformer
 				bind:stageRefs
@@ -341,7 +344,7 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	</div>
 
 	<!-- Text Editor -->
-	<TextEditor 
+	<TextEditor
 		bind:this={textEditorRef}
 		{editingTextId}
 		texts={$elements.filter(isText)}
@@ -349,11 +352,11 @@ import EditorTopBar from '../../lib/components/layout/EditorTopBar.svelte';
 	/>
 
 	<!-- Download Modal -->
-	<DownloadModal 
+	<DownloadModal
 		isOpen={downloadModalOpen}
 		stageRefs={stageRefs || []}
 		pages={$zineStore.pages || []}
 		{designTitle}
-		onClose={() => downloadModalOpen = false}
+		onClose={() => (downloadModalOpen = false)}
 	/>
 </div>

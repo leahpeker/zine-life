@@ -1,5 +1,5 @@
 use sea_orm::entity::prelude::*;
-use sea_orm::{Set, ActiveModelTrait};
+use sea_orm::{ActiveModelTrait, Set};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
@@ -8,34 +8,34 @@ use time::OffsetDateTime;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
-    
+
     /// Foreign key to users table
     pub user_id: Uuid,
-    
+
     pub title: String,
-    
+
     /// JSON data containing all canvas elements (shapes, text, images)
     #[sea_orm(column_type = "Json")]
     pub canvas_data: serde_json::Value,
-    
+
     /// Canvas background color
     pub canvas_background: String,
-    
+
     /// Canvas dimensions as JSON: {"width": 500, "height": 400}
     #[sea_orm(column_type = "Json")]
     pub canvas_size: serde_json::Value,
-    
+
     /// Multi-page design data as JSON array
     #[sea_orm(column_type = "Json")]
     pub pages: serde_json::Value,
-    
+
     /// Whether this design is publicly visible (defaults to false)
     #[sea_orm(default_value = "false")]
     pub is_public: bool,
-    
+
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: OffsetDateTime,
-    
+
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub updated_at: OffsetDateTime,
 }

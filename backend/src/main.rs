@@ -1,26 +1,31 @@
-use actix_web::{web, HttpResponse, Result};
 use actix_cors::Cors;
-use shuttle_actix_web::ShuttleActixWeb;
+use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
+use actix_web::cookie::Key;
+use actix_web::{HttpResponse, Result, web};
 use sea_orm::{Database, DatabaseConnection};
 use sea_orm_migration::MigratorTrait;
+use shuttle_actix_web::ShuttleActixWeb;
 
-mod entities;
-mod migrations;
 mod auth;
-mod handlers;
 mod constants;
+mod entities;
+mod handlers;
+mod middleware;
+mod migrations;
 
 #[cfg(test)]
 mod test_utils;
 
-use migrations::Migrator;
-use auth::{OAuthConfig, google_login, google_callback, github_login, github_callback};
-use handlers::{designs, auth as auth_handlers};
+use auth::{OAuthConfig, github_callback, github_login, google_callback, google_login};
 use constants::{
     api_routes::ApiRoutes,
-    cors::{COMMON_METHODS, COMMON_HEADERS, AllowedOrigins},
-    errors::{StatusMessages, ServiceNames}
+    cors::{AllowedOrigins, COMMON_HEADERS, COMMON_METHODS},
+    environment::Environment,
+    errors::{ServiceNames, StatusMessages},
 };
+use handlers::{auth as auth_handlers, csrf, designs};
+use middleware::{CsrfMiddleware, HttpsRedirect, SecurityHeaders};
+use migrations::Migrator;
 
 async fn health_check() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
@@ -51,56 +56,129 @@ async fn main(
 ) -> ShuttleActixWeb<impl FnOnce(&mut web::ServiceConfig) + Send + Clone + 'static> {
     println!("Starting Zine Life Backend with database connection...");
     println!("Database URL: {}", db_url);
-    
+
     // Create database connection
     let db: DatabaseConnection = Database::connect(&db_url)
         .await
         .expect("Failed to connect to database");
-    
+
     // Run migrations
     println!("Running database migrations...");
     Migrator::up(&db, None)
         .await
         .expect("Failed to run migrations");
-    
+
     println!("Database setup complete!");
-    
+
     // Initialize OAuth configuration with secrets
-    let oauth_config = OAuthConfig::from_secrets(&secrets)
-        .expect("Failed to initialize OAuth configuration");
-    
+    let oauth_config =
+        OAuthConfig::from_secrets(&secrets).expect("Failed to initialize OAuth configuration");
+
+    // Initialize session key for CSRF protection (must be exactly 64 bytes)
+    let session_key = secrets.get("SESSION_KEY").unwrap_or_else(|| {
+        "your-session-key-here-change-in-production-must-be-64-bytes-long".to_string()
+    });
+
+    // Ensure the key is exactly 64 bytes
+    let mut key_bytes = [0u8; 64];
+    let session_bytes = session_key.as_bytes();
+    if session_bytes.len() >= 64 {
+        key_bytes.copy_from_slice(&session_bytes[..64]);
+    } else {
+        // Pad with zeros if too short, or use a default secure key
+        key_bytes[..session_bytes.len()].copy_from_slice(session_bytes);
+    }
+
+    let secret_key = Key::from(&key_bytes);
+
+    // Determine environment
+    let env = Environment::from_env();
+    let is_production = env.is_production();
+
     let config = move |cfg: &mut web::ServiceConfig| {
         cfg.app_data(web::Data::new(db))
             .app_data(web::Data::new(oauth_config))
             .app_data(web::Data::new(secrets))
             .service(
                 web::scope("")
+                    .wrap(SecurityHeaders)
+                    .wrap(HttpsRedirect)
+                    .wrap(CsrfMiddleware)
                     .wrap(
-                        Cors::default()
+                        SessionMiddleware::builder(
+                            CookieSessionStore::default(),
+                            secret_key.clone(),
+                        )
+                        .cookie_name("session".to_string())
+                        .cookie_secure(is_production)
+                        .session_lifecycle(PersistentSession::default())
+                        .build(),
+                    )
+                    .wrap({
+                        let mut cors = Cors::default()
                             .allowed_origin(AllowedOrigins::LOCALHOST_5173)
                             .allowed_origin(AllowedOrigins::LOCALHOST_127_5173)
                             .allowed_methods(COMMON_METHODS)
                             .allowed_headers(COMMON_HEADERS)
                             .supports_credentials()
-                            .max_age(3600)
-                    )
+                            .max_age(3600);
+
+                        // Add production frontend URL if available
+                        if let Ok(frontend_url) = std::env::var("FRONTEND_URL") {
+                            cors = cors.allowed_origin(&frontend_url);
+                        }
+
+                        cors
+                    })
                     .route(ApiRoutes::HEALTH, web::get().to(health_check))
                     .route(ApiRoutes::API_HELLO, web::get().to(hello))
                     .route(ApiRoutes::API_DB_STATUS, web::get().to(db_status))
                     // Auth routes
                     .route(ApiRoutes::AUTH_GOOGLE, web::get().to(google_login))
-                    .route(ApiRoutes::AUTH_GOOGLE_CALLBACK, web::get().to(google_callback))
+                    .route(
+                        ApiRoutes::AUTH_GOOGLE_CALLBACK,
+                        web::get().to(google_callback),
+                    )
                     .route(ApiRoutes::AUTH_GITHUB, web::get().to(github_login))
-                    .route(ApiRoutes::AUTH_GITHUB_CALLBACK, web::get().to(github_callback))
-                    .route(ApiRoutes::API_AUTH_ME, web::get().to(auth_handlers::get_current_user_info))
-                    .route(ApiRoutes::API_AUTH_LOGOUT, web::post().to(auth_handlers::logout))
+                    .route(
+                        ApiRoutes::AUTH_GITHUB_CALLBACK,
+                        web::get().to(github_callback),
+                    )
+                    .route(
+                        ApiRoutes::API_AUTH_ME,
+                        web::get().to(auth_handlers::get_current_user_info),
+                    )
+                    .route(
+                        ApiRoutes::API_AUTH_LOGOUT,
+                        web::post().to(auth_handlers::logout),
+                    )
                     // Design routes
                     .route(ApiRoutes::API_DESIGNS, web::get().to(designs::list_designs))
-                    .route(ApiRoutes::API_DESIGNS, web::post().to(designs::create_design))
-                    .route(ApiRoutes::API_DESIGNS_PUBLIC, web::get().to(designs::list_public_designs))
-                    .route(ApiRoutes::API_DESIGNS_BY_ID, web::get().to(designs::get_design))
-                    .route(ApiRoutes::API_DESIGNS_BY_ID, web::put().to(designs::update_design))
-                    .route(ApiRoutes::API_DESIGNS_BY_ID, web::delete().to(designs::delete_design))
+                    .route(
+                        ApiRoutes::API_DESIGNS,
+                        web::post().to(designs::create_design),
+                    )
+                    .route(
+                        ApiRoutes::API_DESIGNS_PUBLIC,
+                        web::get().to(designs::list_public_designs),
+                    )
+                    .route(
+                        ApiRoutes::API_DESIGNS_BY_ID,
+                        web::get().to(designs::get_design),
+                    )
+                    .route(
+                        ApiRoutes::API_DESIGNS_BY_ID,
+                        web::put().to(designs::update_design),
+                    )
+                    .route(
+                        ApiRoutes::API_DESIGNS_BY_ID,
+                        web::delete().to(designs::delete_design),
+                    )
+                    // CSRF route
+                    .route(
+                        ApiRoutes::API_CSRF_TOKEN,
+                        web::get().to(csrf::get_csrf_token),
+                    ),
             );
     };
 

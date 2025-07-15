@@ -1,6 +1,6 @@
-use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
-use time::{OffsetDateTime, Duration};
+use time::{Duration, OffsetDateTime};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JwtClaims {
@@ -10,8 +10,7 @@ pub struct JwtClaims {
 }
 
 pub fn create_jwt_token(user_id: &str) -> Result<String, jsonwebtoken::errors::Error> {
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "your-secret-key".to_string());
+    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "your-secret-key".to_string());
 
     let now = OffsetDateTime::now_utc();
     let expiration = now + Duration::days(30);
@@ -31,8 +30,7 @@ pub fn create_jwt_token(user_id: &str) -> Result<String, jsonwebtoken::errors::E
 
 #[allow(dead_code)]
 pub fn verify_jwt_token(token: &str) -> Result<JwtClaims, jsonwebtoken::errors::Error> {
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "your-secret-key".to_string());
+    let jwt_secret = std::env::var("JWT_SECRET").unwrap_or_else(|_| "your-secret-key".to_string());
 
     decode::<JwtClaims>(
         token,

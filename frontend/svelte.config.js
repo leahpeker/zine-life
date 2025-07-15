@@ -5,10 +5,8 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: { adapter: adapter() },
 	esbuildOptions: {
-
-external: ['canvas']
-
-}
+		external: ['canvas']
+	}
 };
 
 export default config;

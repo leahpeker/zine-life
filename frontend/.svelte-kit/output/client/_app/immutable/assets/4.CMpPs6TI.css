@@ -1,0 +1,14 @@
+.overflow-x-auto.svelte-qexxnd {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-primary) var(--color-background-panel);
+}
+.overflow-x-auto.svelte-qexxnd::-webkit-scrollbar {
+	height: 8px;
+}
+.overflow-x-auto.svelte-qexxnd::-webkit-scrollbar-track {
+	background: var(--color-background-panel);
+}
+.overflow-x-auto.svelte-qexxnd::-webkit-scrollbar-thumb {
+	background: var(--color-primary);
+	border-radius: 4px;
+}

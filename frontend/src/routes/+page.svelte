@@ -16,7 +16,7 @@
 		try {
 			const publicUrl = buildApiUrl(API_ENDPOINTS.DESIGNS.PUBLIC);
 			const response = await fetch(publicUrl);
-			
+
 			if (response.ok) {
 				const data = await response.json();
 				publicDesigns = (data.designs || []).slice(0, 6); // Show 6 public designs
@@ -34,13 +34,16 @@
 
 <svelte:head>
 	<title>ZINE LIFE - DIY GRAPHICS FOR THE UNDERGROUND</title>
-	<meta name="description" content="Create punk flyers, zines, and underground graphics. No corporate BS." />
+	<meta
+		name="description"
+		content="Create punk flyers, zines, and underground graphics. No corporate BS."
+	/>
 </svelte:head>
 
 <!-- Header -->
 <Header />
 
-<main class="bg-black min-h-screen photocopied relative" style="margin-top: 64px;">
+<main class="photocopied relative min-h-screen bg-black" style="margin-top: 64px;">
 	{#if $authStore.user}
 		<UserDashboard user={$authStore.user} />
 	{:else}

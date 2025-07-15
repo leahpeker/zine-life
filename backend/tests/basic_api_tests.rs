@@ -1,4 +1,4 @@
-use actix_web::{test, web, App, HttpResponse, Result};
+use actix_web::{App, HttpResponse, Result, test, web};
 use serde_json::Value;
 
 async fn health_check() -> Result<HttpResponse> {
@@ -16,14 +16,10 @@ async fn hello() -> Result<HttpResponse> {
 
 #[tokio::test]
 async fn test_health_endpoint() {
-    let app = test::init_service(
-        App::new().route("/health", web::get().to(health_check))
-    ).await;
+    let app = test::init_service(App::new().route("/health", web::get().to(health_check))).await;
 
-    let req = test::TestRequest::get()
-        .uri("/health")
-        .to_request();
-    
+    let req = test::TestRequest::get().uri("/health").to_request();
+
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
 
@@ -34,14 +30,10 @@ async fn test_health_endpoint() {
 
 #[tokio::test]
 async fn test_hello_endpoint() {
-    let app = test::init_service(
-        App::new().route("/api/hello", web::get().to(hello))
-    ).await;
+    let app = test::init_service(App::new().route("/api/hello", web::get().to(hello))).await;
 
-    let req = test::TestRequest::get()
-        .uri("/api/hello")
-        .to_request();
-    
+    let req = test::TestRequest::get().uri("/api/hello").to_request();
+
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
 
@@ -51,14 +43,10 @@ async fn test_hello_endpoint() {
 
 #[tokio::test]
 async fn test_404_response() {
-    let app = test::init_service(
-        App::new().route("/health", web::get().to(health_check))
-    ).await;
+    let app = test::init_service(App::new().route("/health", web::get().to(health_check))).await;
 
-    let req = test::TestRequest::get()
-        .uri("/nonexistent")
-        .to_request();
-    
+    let req = test::TestRequest::get().uri("/nonexistent").to_request();
+
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 404);
 }

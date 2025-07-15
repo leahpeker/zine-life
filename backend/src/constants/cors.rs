@@ -24,10 +24,11 @@ impl HttpHeaders {
     pub const COOKIE: &'static str = "Cookie";
 }
 
-pub const COMMON_HEADERS: [&str; 3] = [
+pub const COMMON_HEADERS: [&str; 4] = [
     HttpHeaders::CONTENT_TYPE,
     HttpHeaders::AUTHORIZATION,
     HttpHeaders::COOKIE,
+    "X-CSRF-Token",
 ];
 
 pub struct AllowedOrigins;

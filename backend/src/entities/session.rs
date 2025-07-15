@@ -1,5 +1,5 @@
 use sea_orm::entity::prelude::*;
-use sea_orm::{Set, ActiveModelTrait};
+use sea_orm::{ActiveModelTrait, Set};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
@@ -8,17 +8,17 @@ use time::OffsetDateTime;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: Uuid,
-    
+
     /// Foreign key to users table
     pub user_id: Uuid,
-    
+
     /// JWT token or session identifier
     pub token: String,
-    
+
     /// When this session expires
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub expires_at: OffsetDateTime,
-    
+
     #[sea_orm(column_type = "TimestampWithTimeZone")]
     pub created_at: OffsetDateTime,
 }

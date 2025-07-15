@@ -5,7 +5,7 @@ impl ApiRoutes {
     pub const HEALTH: &'static str = "/health";
     pub const API_HELLO: &'static str = "/api/hello";
     pub const API_DB_STATUS: &'static str = "/api/db-status";
-    
+
     // Auth routes
     pub const AUTH_GOOGLE: &'static str = "/auth/google";
     pub const AUTH_GOOGLE_CALLBACK: &'static str = "/auth/google/callback";
@@ -13,9 +13,12 @@ impl ApiRoutes {
     pub const AUTH_GITHUB_CALLBACK: &'static str = "/auth/github/callback";
     pub const API_AUTH_ME: &'static str = "/api/auth/me";
     pub const API_AUTH_LOGOUT: &'static str = "/api/auth/logout";
-    
+
     // Design routes
     pub const API_DESIGNS: &'static str = "/api/designs";
     pub const API_DESIGNS_PUBLIC: &'static str = "/api/designs/public";
     pub const API_DESIGNS_BY_ID: &'static str = "/api/designs/{id}";
+
+    // CSRF routes
+    pub const API_CSRF_TOKEN: &'static str = "/api/csrf-token";
 }

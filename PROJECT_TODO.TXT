@@ -1,0 +1,493 @@
+# Zine Life - Full Stack Development Progress & TODO
+
+## STATUS UPDATE (2025-07-14)
+🎉 **MASSIVE PROGRESS - DEPLOYMENT READY** 🎉
+
+### 🚀 LATEST COMPLETIONS (July 14, 2025):
+- ✅ **GitHub OAuth** - Full dual-provider authentication (Google + GitHub)
+- ✅ **Code Architecture** - Refactored to clean services pattern  
+- ✅ **Security Fixes** - Proper logout, HTTP-only cookie handling
+- ✅ **Account Linking** - Smart email-based account unification
+- ✅ **Frontend/Backend Separation** - Clean API boundaries established
+
+### 📊 COMPLETION STATUS:
+- **Backend Infrastructure**: 100% ✅
+- **Authentication System**: 100% ✅  
+- **Multi-page Editor**: 100% ✅
+- **Design Management**: 100% ✅
+- **Download/Export**: 100% ✅
+- **Core Element System**: 95% ✅ (stamp rendering pending)
+- **Post-Punk UI**: 100% ✅
+
+## STATUS UPDATE (2025-07-01)
+🎉 **MAJOR PROGRESS COMPLETED** 🎉
+
+## Project Architecture Changes
+- [x] ✅ Restructure project to separate frontend and backend
+- [x] ✅ Frontend: Move current Svelte app to `/frontend` directory
+- [x] ✅ Backend: Create Rust API server in `/backend` directory
+- [x] ✅ Database: PostgreSQL for production and development
+
+## Backend Infrastructure (Rust)
+### Core Setup
+- [x] ✅ Initialize new Rust project with Cargo
+- [x] ✅ Set up Actix-web framework
+- [x] ✅ Set up SeaORM for database operations
+- [x] ✅ Configure Neon PostgreSQL database connection
+- [x] ✅ Set up database migrations with SeaORM
+- [x] ✅ Set up CORS for frontend communication
+- [x] ✅ Environment configuration (.env files)
+- [x] ✅ Error handling and logging setup
+- [x] ✅ Configure for Shuttle.rs deployment
+
+### Database Schema Design
+- [x] ✅ Users table (id, email, name, avatar_url, provider, provider_id, created_at, updated_at)
+- [x] ✅ Designs table (id, user_id, title, canvas_data, canvas_background, canvas_size, is_public, created_at, updated_at)
+  - Note: is_public defaults to false (private by default)
+  - User can make public when downloading/publishing
+- [x] ✅ Sessions table (id, user_id, token, expires_at, created_at)
+- [ ] Design_shares table (optional - for sharing designs)
+
+### Authentication System
+- [x] ✅ OAuth integration setup (oauth2 crate)
+- [x] ✅ Google OAuth provider configuration
+- [ ] GitHub OAuth provider configuration
+- [x] ✅ JWT token generation and validation
+- [x] ✅ Session management middleware
+- [x] ✅ Logout functionality
+- [ ] Token refresh mechanism
+
+### API Endpoints
+#### Authentication
+- [x] ✅ GET /auth/google - Redirect to Google OAuth
+- [ ] GET /auth/github - Redirect to GitHub OAuth
+- [x] ✅ GET /auth/google/callback - Handle Google OAuth callback
+- [ ] GET /auth/callback/github - Handle GitHub OAuth callback
+- [x] ✅ POST /auth/logout - Logout user
+- [x] ✅ GET /auth/me - Get current user info
+
+#### Designs/Zines
+- [x] ✅ GET /api/designs - List user's designs (authenticated)
+- [x] ✅ GET /api/designs/public - List public designs for homepage
+- [x] ✅ GET /api/designs/:id - Get specific design
+- [x] ✅ POST /api/designs - Create new design (authenticated)
+- [x] ✅ PUT /api/designs/:id - Update design (authenticated, owner only)
+- [x] ✅ DELETE /api/designs/:id - Delete design (authenticated, owner only)
+- [ ] POST /api/designs/:id/duplicate - Duplicate a public design
+
+#### Health & Info
+- [x] ✅ GET /health - Health check endpoint
+- [ ] GET /api/stats - Public stats (total designs, users, etc.)
+
+## Frontend Changes
+### Project Structure
+- [x] ✅ Move current Svelte app to subdirectory
+- [x] ✅ Update build configuration for new structure
+- [x] ✅ Set up API base URL configuration
+
+### New Components & Pages
+- [x] ✅ Homepage component (like Canva)
+  - [x] ✅ Hero section with app description
+  - [x] ✅ Login buttons (Google OAuth)
+  - [x] ✅ Public designs gallery section
+  - [x] ✅ "Start Creating" button (redirects to editor)
+  - [x] ✅ Templates section
+  - [x] ✅ Features section
+  - [x] ✅ Footer with links
+- [x] ✅ Editor moved to `/editor` route
+- [ ] Login page/modal
+- [ ] User profile/account page
+- [ ] Design gallery page (user's own designs)
+
+### Homepage Design (Canva-inspired)
+- [x] ✅ Clean, minimal header with logo and login button
+- [x] ✅ Hero section: "Design anything, publish everywhere" with CTA
+- [x] ✅ Featured/Recent public designs grid
+- [x] ✅ Templates grid with categories
+- [x] ✅ Features section highlighting editor capabilities
+- [x] ✅ Responsive design for mobile/desktop
+- [x] ✅ Gradient hero background
+- [x] ✅ Professional color scheme (purple/blue theme)
+
+### Authentication Flow
+- [ ] Auth store/context for user state
+- [ ] Protected routes (redirect to login if not authenticated)
+- [ ] Login redirect after authentication
+- [ ] Logout functionality
+- [ ] User avatar/name display in header
+
+### API Integration
+- [ ] HTTP client setup (fetch/axios)
+- [ ] API error handling
+- [ ] Loading states for API calls
+- [ ] Save design to backend when editing
+- [ ] Auto-save functionality (debounced)
+- [ ] Load design from backend
+- [ ] Design list/gallery integration
+
+## DevOps & Deployment
+- [x] ✅ Shuttle.rs deployment configuration
+- [x] ✅ Environment variable management for Shuttle.rs
+- [x] ✅ Neon PostgreSQL database setup
+- [x] ✅ Database migration scripts for production
+- [ ] Frontend build process updates (Vercel)
+- [x] ✅ CORS configuration for production (Vercel frontend + Shuttle backend)
+- [ ] Rate limiting setup
+- [ ] Security headers
+
+## Security Considerations
+- [ ] CSRF protection
+- [x] ✅ Input validation and sanitization
+- [x] ✅ SQL injection prevention (SeaORM handles this)
+- [x] ✅ Secure session management
+- [x] ✅ Environment secrets management
+- [ ] HTTPS enforcement in production
+
+## Testing
+- [x] ✅ Backend unit tests (9/9 working tests)
+- [x] ✅ API integration tests
+- [x] ✅ OAuth authentication tests
+- [ ] Frontend component tests
+- [ ] End-to-end authentication flow tests
+
+## ✅ MAJOR PROGRESS UPDATE (2025-07-02)
+🎉 **MASSIVE ACHIEVEMENTS COMPLETED** 🎉
+
+### 🎨 Post-Punk Aesthetic - COMPLETE ✅
+- ✅ **Transformed Homepage**: Complete post-punk overhaul with black backgrounds, neon green accents
+- ✅ **Industrial Typography**: Added Orbitron + Rajdhani fonts for angular/stencil aesthetic  
+- ✅ **Simplified Interface**: Removed all corporate sections for minimal DIY vibe
+- ✅ **Visual Effects**: Glitch text, photocopied textures, scan lines, high contrast design
+- ✅ **Underground Messaging**: "DIY GRAPHICS FOR THE UNDERGROUND" - anti-corporate branding
+
+### 🔐 Authentication System - COMPLETE ✅
+- ✅ **Google OAuth Flow**: Full OAuth2 implementation working end-to-end
+- ✅ **Database Integration**: User creation, session management, JWT tokens
+- ✅ **Cookie-Based Auth**: HTTP-only cookies with proper security settings
+- ✅ **Frontend Integration**: Auth store created, LOGIN button connects to backend
+- ✅ **Security**: Secrets properly gitignored, environment variables secured
+
+## 🚨 NEXT IMMEDIATE PRIORITIES
+
+### 🔐 Authentication UX (HIGH PRIORITY)
+1. ✅ **Login State Management** - Connect frontend auth store to backend cookie system
+2. ✅ **Header Authentication UI** - Replace LOGIN button with user dropdown when authenticated
+   - Show user avatar + name
+   - Dropdown: "My Designs", "Account", "Logout" 
+   - Post-punk styling (angular, high contrast)
+3. **Auth Flow Integration** - Ensure smooth login/logout experience
+
+### 🏠 Homepage & Navigation Flow (HIGH PRIORITY) 
+4. ✅ **Smart Homepage Logic** - Decide homepage behavior based on auth state:
+   - **Anonymous**: Underground showcase + public gallery + call-to-action
+   - **Logged-in**: Personal summary (recent designs) + quick access to dashboard
+5. ✅ **Dashboard/Personal Designs Page** - Dedicated page for user's designs
+   - Grid of user's designs (private + public)
+   - "New Design" prominent button  
+   - Filter: All, Private, Public
+   - Post-punk grid layout (angular, high contrast)
+6. **Navigation Strategy** - Determine "Start Creating" button behavior:
+   - **Anonymous**: Go to login → dashboard → editor
+   - **Logged-in**: Direct to dashboard OR editor (to be decided)
+
+### 🌍 Public Gallery & Discovery (MEDIUM PRIORITY)
+7. **Public Gallery Page** - Showcase community designs
+   - Filter by type: Flyers, Zines, Protest Art, etc.
+   - Underground aesthetic (dark, gritty grid)
+   - "Duplicate This Design" buttons
+8. **Design Details View** - Individual design pages
+   - Creator info, creation date
+   - "Duplicate" and "View Larger" options
+   - Related designs suggestion
+
+### 🛠 Editor Integration (HIGH PRIORITY)  
+9. **✅ Design Save/Load Integration** - Connect editor to backend API - COMPLETE
+   - ✅ Handle design ID in editor URL parameters for loading existing designs
+   - ✅ Implement save/load functions in editor that call backend API
+   - ✅ Add error handling for save/load operations
+   - ✅ Ensure canvas data serialization works properly with backend
+   - ✅ Fixed authentication database access issue
+10. **✅ Auto-save Functionality** - Save designs as user works - COMPLETE
+   - ✅ Add debounced auto-save (save after 2 seconds of inactivity)
+   - ✅ Show save status indicator (saving, saved, error)
+   - ✅ Handle network failures gracefully
+11. **✅ Manual Save Controls** - User-initiated save operations - COMPLETE
+   - ✅ Add save button to editor interface
+   - ✅ Show save status in editor UI
+   - ✅ Add keyboard shortcut for save (Ctrl/Cmd+S)
+12. **✅ UI Integration Issues Fixed** - Dashboard and homepage integration - COMPLETE
+   - ✅ Fixed dashboard infinite loading loop when no designs exist
+   - ✅ Fixed homepage "Your Recent Work" section API response handling
+   - ✅ Fixed Invalid Date display by formatting dates as RFC3339
+   - ✅ Added edit/delete functionality in dashboard
+13. **🚨 Design Thumbnails** - Generate previews of saved designs - IN PROGRESS
+   - ❌ **ISSUE**: Thumbnail rendering not working properly (shapes appear as squares)
+   - ❌ **ISSUE**: Konva import conflicts with svelte-konva in Svelte 5
+   - [ ] Need to fix thumbnail generation using existing stage.toDataURL() method
+   - [ ] SimpleThumbnail component created but needs debugging
+   - **Status**: Shows fallback "PREVIEW" placeholder instead of real thumbnails
+14. **Design Management** - Rename, delete, duplicate designs from editor
+   - ✅ Add design title editing in editor (already works via TitleSection)
+   - [ ] Add "Save As" functionality for duplicating designs
+   - [ ] Add delete design option from editor
+
+### 🎨 Editor UI & Feature Updates (MEDIUM PRIORITY)
+12. **✅ Post-Punk Editor Styling** - Apply underground aesthetic to editor interface - COMPLETE
+    - ✅ TopBar component updated with neon green accents
+    - ✅ Dark theme for editor layout background
+    - ✅ Consistent post-punk styling across editor panels
+13. **Multi-Page Zine Functionality** - Transform editor for zine creation
+    - Page management UI (add/delete pages)
+    - Page store for managing multiple canvas pages
+    - Zine mode toggle (single page vs spread view)
+    - Spread view implementation (pages 2-3, 4-5 side by side)
+    - Canvas controls integration with multi-page functionality
+14. **Expanded Element Library** - More design options for zine creators
+    - Common zine elements (decorative borders, dividers, frames, corners)
+    - Typography elements (text boxes, speech bubbles, banners, labels)
+    - Punk/underground graphics (skulls, lightning bolts, spraypaint effects)
+    - Basic patterns (dots, stripes, grids, noise textures)
+    - DIY craft elements (torn paper, tape strips, paperclip, staples)
+    - Element presets with punk aesthetic (pre-styled shapes with gritty fills)
+
+### 🎨 Post-Punk UI Polish (LOW PRIORITY)
+15. **Consistent Underground Aesthetic** - Apply post-punk styling across all pages
+16. **Loading States** - Punk-themed loading animations
+17. **Error States** - Aggressive error messages fitting the aesthetic
+
+### 🧹 CODEBASE CLEANUP (COMPLETED)
+18. **✅ Fix Compilation Warnings** - Removed unused variables and dead code warnings
+19. **✅ Remove Debug Code** - Cleaned up all console.log statements from frontend
+20. **Import Optimization** - Review and optimize imports across codebase
+21. **Code Formatting** - Ensure consistent formatting throughout
+
+### ♿ ACCESSIBILITY (HIGH PRIORITY) 
+22. ✅ **Fix ARIA Labels** - Add aria-label attributes to all buttons without text
+23. ✅ **Form Labels** - Associate all form labels with proper controls
+24. **Keyboard Navigation** - Ensure all interactive elements are keyboard accessible
+25. ✅ **Screen Reader Support** - Add proper ARIA roles and descriptions
+26. **Focus Management** - Implement proper focus indicators and skip links
+27. ✅ **WCAG Compliance** - Address all accessibility warnings found in build
+
+## Design Notes
+- **POST-PUNK AESTHETIC NEEDED**: Update the current purple/blue professional theme to a grittier post-punk style:
+  - Darker color scheme (blacks, whites, neons)
+  - More angular, edgy design elements
+  - Typography with character (maybe stencil or industrial fonts)
+  - High contrast design
+  - Underground zine/fanzine visual inspiration
+
+## Optional Future Features
+- [ ] Design collaboration (sharing edit access)
+- [ ] Design comments/feedback
+- [ ] Design templates/categories
+- [ ] User profiles with bio
+- [ ] Design likes/favorites
+- [ ] Export history tracking
+- [ ] Email notifications for shares
+
+## 🚨 NEW MULTI-PAGE ZINE FUNCTIONALITY UPDATES (2025-07-11)
+### ✅ COMPLETED MAJOR FEATURES
+- ✅ **Multi-page zine editor** - Full implementation with page management
+- ✅ **Page store system** - Reactive page management with current page tracking
+- ✅ **Database migration** - Added pages JSON column to designs table
+- ✅ **Save/Load multi-page** - Updated API to handle pages array instead of single canvas
+- ✅ **Download system** - Multi-page download with all pages, current page, and page range options
+- ✅ **Stage reference binding** - Fixed Svelte 5 component binding for download functionality
+
+## 🔥 HIGH PRIORITY IMMEDIATE TASKS (UPDATED 2025-07-15)
+1. ✅ **PDF Download Feature** - Add PDF export with single file default + separate files checkbox - COMPLETED
+2. ✅ **Canvas Background Sync** - Fix canvas background color synchronization issues across pages - COMPLETED  
+3. ✅ **Horizontal Striations Fix** - Removed scan-lines CSS causing canvas rendering issues - COMPLETED
+4. ✅ **User Name Improvements** - Updated welcome text to use first name only - COMPLETED
+5. ✅ **Stamp Element System** - Created stamps as separate element type with multiple styles - COMPLETED
+6. ✅ **Fix Text Editing** - Text no longer editable due to button wrapper in multi-page canvas - COMPLETED
+7. ✅ **GitHub OAuth** - Add GitHub as additional OAuth provider option - COMPLETED
+8. ✅ **Design Services Refactor** - Moved loadDesign/saveDesign functions to services layer - COMPLETED
+9. ✅ **Auth Services Refactor** - Moved authService to dedicated services folder - COMPLETED
+10. ✅ **Logout Security Fix** - Fixed logout to properly clear HTTP-only cookies - COMPLETED
+11. ✅ **CSRF Protection Implementation** - Full end-to-end CSRF protection for all state-changing operations - COMPLETED
+12. **Complete Element Types** - Finish speech bubbles and text banners implementation
+13. **Code Quality** - Address all warnings and errors in codebase
+14. **Accessibility (a11y)** - Complete accessibility audit and fixes
+
+## 📋 MEDIUM PRIORITY TASKS  
+7. **User Settings Page** - Add theme customization and preferences  
+8. **Light/Dark Mode** - Implement theme toggle system
+9. **Content Updates** - Update copy throughout app to reduce cheesy tone
+10. **Zoom Fixes** - Address any remaining zoom functionality issues
+11. **Debug Cleanup** - Remove console.log statements from download functionality
+
+## 🎨 LOW PRIORITY POLISH
+12. **Theme Colors** - Update SVG icons from purple to use theme colors
+13. **Page Thumbnails** - Add page overview thumbnails at top
+14. **Svelte 5 Warnings** - Fix console warnings about $state proxies
+15. **Sticker/Stamp Element System** - Add comprehensive sticker collection for design elements
+
+## 📝 CONTENT & UX IMPROVEMENTS
+- [ ] Review and update all UI text for more professional tone
+- [ ] Update button labels and descriptions throughout app
+- [ ] Review onboarding/welcome messaging
+- [ ] Update error messages for better user experience
+- [ ] Review tooltip and help text across all components
+
+## 👤 USER NAME & AUTH IMPROVEMENTS
+- ✅ **Welcome Text Updates** - Change "Welcome [Full Name]" to "Welcome [First Name]" - COMPLETED
+- ✅ **GitHub OAuth Integration** - Add GitHub as additional OAuth provider - COMPLETED
+  - ✅ Add GitHub OAuth configuration to backend
+  - ✅ Add GitHub login button to frontend 
+  - ✅ Handle GitHub OAuth callback
+  - ✅ Update user model to support multiple OAuth providers
+  - ✅ Smart email handling for account linking
+- ✅ **Name Parsing** - Extract first name from full name in OAuth responses - COMPLETED
+- [ ] **Username System** - Add username field to user profile
+  - Default username to name from OAuth provider initially
+  - Allow users to update their username in settings
+  - Use username in UI where appropriate (vs full name)
+- [ ] **User Settings** - Allow users to edit display name/username
+
+## 🌐 ACCESSIBILITY (a11y) COMPREHENSIVE AUDIT
+- [ ] Add proper ARIA labels to all interactive elements
+- [ ] Ensure keyboard navigation works throughout entire app
+- [ ] Add focus management for modals and dropdowns
+- [ ] Improve color contrast ratios across all themes
+- [ ] Add screen reader support for canvas elements
+- [ ] Test with screen readers and keyboard-only navigation
+- [ ] Add skip links for main navigation
+- [ ] Ensure all images have proper alt text
+- [ ] Review heading hierarchy (h1, h2, h3, etc.)
+- [ ] Test download modal accessibility
+- [ ] Test multi-page canvas accessibility
+
+## 🔧 TECHNICAL DEBT & CODE QUALITY
+- [ ] Clean up unused imports and dependencies
+- [ ] Optimize component re-renders (especially multi-page)
+- [ ] Review and improve TypeScript types
+- [ ] Update documentation and comments
+- [ ] Performance audit and optimization
+- [ ] Fix all ESLint warnings
+- [ ] Fix all TypeScript errors
+- [ ] Code formatting consistency
+
+## Development Order Priority ✅ CURRENT STATUS (UPDATED 2025-07-12)
+1. ✅ Backend infrastructure setup - DONE
+2. ✅ Database schema and migrations - DONE
+3. ✅ Basic authentication (Google OAuth first) - DONE
+4. ✅ Design CRUD API endpoints - DONE
+5. ✅ Frontend homepage creation - DONE
+6. ✅ Frontend auth integration - DONE
+7. ✅ Design save/load integration - DONE
+8. ✅ Multi-page zine functionality - DONE
+9. ✅ Multi-page download system - DONE
+10. ✅ PDF downloads + UI improvements - COMPLETED
+11. 🔄 Element system expansion (stamps, text types) - IN PROGRESS
+12. [ ] Text editing and element rendering fixes
+13. [ ] Accessibility audit and fixes
+14. [ ] Content/copy updates
+15. [ ] User settings and theming
+16. [ ] Polish and testing
+
+## 🎨 NEW ELEMENT SYSTEM PROGRESS (2025-07-12)
+### ✅ COMPLETED TODAY:
+- **Stamp Element Type** - Full separate element category with 6 stamp types
+- **PDF Export** - Single file default + separate files option
+- **Background Color Sync** - Fixed multi-page background color issues
+- **CSS Striations Fix** - Removed scan-lines causing canvas visual issues
+- **Welcome Text** - Now shows first name only instead of full name
+
+### 🔄 CURRENTLY IN PROGRESS:
+- **Text Editing Fix** - Button wrapper prevents double-click text editing
+- **Stamp Rendering** - Stamps register but don't appear on canvas (element creation pipeline incomplete)
+- **Speech Bubbles & Text Banners** - Partially implemented but need completion
+
+### 📋 NEXT ELEMENT PRIORITIES:
+1. Fix stamp rendering pipeline (element creation, stores, canvas rendering)
+2. Fix text editing (replace button wrapper with div)
+3. Complete speech bubbles and text banners
+4. Add DIY/punk elements (tape strips, safety pins, lightning bolts)
+
+## 🎨 USER-GENERATED CONTENT MARKETPLACE (NEW FEATURE)
+### Core Concept: User-Created Elements & Monetization
+- **User-Created Stickers/Elements** - Allow users to design and upload their own stickers, stamps, shapes, text elements, etc.
+  - Upload interface for custom SVG/vector elements
+  - Element editor for creating simple shapes and text styles
+  - Preview system before publishing
+  - Categorization and tagging system
+
+- **Element Marketplace & Pricing** - Monetization system for user-created content
+  - **Free Elements** - Users can mark their elements as free for community use
+  - **Paid Elements** - Users can set custom prices for premium elements
+  - Price range: $0.50 - $10.00 per element or element pack
+  - Revenue sharing: 70% creator, 30% platform
+  - Payment processing integration (Stripe)
+  - Creator earnings dashboard
+
+- **Discovery & Search** - Help users find elements
+  - **Global Element Search** - Search across all available elements (built-in + user-created)
+    - Text search by element name, description, tags
+    - Advanced filters: category, style, color, price range, creator
+    - Search suggestions and autocomplete
+    - Recent searches and search history
+    - Search results sorting (relevance, price, popularity, newest)
+  - **In-Editor Search** - Quick element search within the editor sidebar
+    - Search bar in each element category panel
+    - Real-time filtering as user types
+    - Search across built-in elements and purchased/free user elements
+    - Quick access to frequently used elements
+  - Browse by category (stickers, shapes, text, backgrounds, etc.)
+  - Search by style (punk, minimal, vintage, etc.) 
+  - Filter by price (free, under $1, under $5, etc.)
+  - Creator profiles and portfolios
+  - Popular/trending elements section
+  - User ratings and reviews
+  - **Search Analytics** - Track popular search terms for element creation insights
+
+- **Quality Control & Moderation**
+  - Element approval process before going live
+  - Community reporting system
+  - Copyright infringement protection
+  - Content guidelines enforcement
+  - Creator verification system
+
+- **Technical Implementation**
+  - Element storage (AWS S3 or similar)
+  - Database schema for elements, pricing, purchases
+  - User wallet/balance system
+  - Purchase history and download management
+  - Creator analytics and earnings tracking
+  - API endpoints for marketplace functionality
+
+## 🚀 OPEN SOURCE COMMUNITY & CONTRIBUTIONS
+### Website Integration
+- **Open Source Section** - Add dedicated page/section promoting open source nature
+  - "Built in the Open" page explaining the project's open source philosophy
+  - Link to GitHub repository with contribution guidelines
+  - Developer community showcase (contributor profiles, recent commits)
+  - Technical stack transparency (Rust backend, Svelte frontend, etc.)
+  
+- **Contribution Pathways** - Multiple ways for community to contribute
+  - **Code Contributions** - Bug fixes, features, performance improvements
+    - Link to GitHub issues labeled "good first issue" and "help wanted"
+    - Contribution guidelines and code of conduct
+    - Development setup instructions
+  - **Design Contributions** - UI/UX improvements, iconography, branding
+  - **Content Contributions** - Documentation, tutorials, example zines
+  - **Element Contributions** - Free starter elements for the community
+  
+- **Footer Integration** - Add open source links to website footer
+  - "Open Source" link leading to contribution page
+  - GitHub repository link with star count
+  - "Built with ❤️ by the community" messaging
+  
+- **Developer Resources** - Support external developers
+  - API documentation for building integrations
+  - Plugin/extension architecture (future)
+  - Development blog posts about technical decisions
+  - Open roadmap showing planned features
+
+### Community Building
+- **Developer Community** - Foster open source participation
+  - Discord/forum for developers and contributors
+  - Monthly community calls or office hours
+  - Recognition system for contributors
+  - Hacktoberfest participation

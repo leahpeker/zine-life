@@ -1,14 +1,14 @@
+use crate::migrations::Migrator;
 use sea_orm::{Database, DatabaseConnection, DbErr};
 use sea_orm_migration::MigratorTrait;
-use crate::migrations::Migrator;
 
 /// Create a test database connection using SQLite in-memory
 pub async fn setup_test_db() -> Result<DatabaseConnection, DbErr> {
     let db = Database::connect("sqlite::memory:").await?;
-    
+
     // Run migrations
     Migrator::up(&db, None).await?;
-    
+
     Ok(db)
 }
 
