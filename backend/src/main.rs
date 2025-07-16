@@ -12,6 +12,7 @@ mod entities;
 mod handlers;
 mod middleware;
 mod migrations;
+mod validation;
 
 #[cfg(test)]
 mod test_utils;

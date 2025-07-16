@@ -11,6 +11,7 @@ use uuid::Uuid;
 use crate::auth::middleware::get_current_user;
 use crate::entities::{design, user};
 use crate::middleware::{CsrfProtector, InputValidator, validation_error};
+use crate::validation::validate_pages_array;
 use actix_session::Session;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -226,9 +227,34 @@ pub async fn create_design(
         }
     };
 
-    if let Err(err) = InputValidator::validate_canvas_data(&data.pages) {
-        tracing::warn!("Invalid canvas data: {}", err);
-        return Ok(validation_error(&err));
+    // Validate pages using comprehensive validation
+    if let Some(pages_array) = data.pages.as_array() {
+        if let Err(validation_errors) = validate_pages_array(pages_array) {
+            tracing::warn!("Page validation failed: {:?}", validation_errors);
+            // Convert validation errors to a user-friendly message
+            let error_message = validation_errors.errors()
+                .iter()
+                .map(|(field, errors)| {
+                    let field_errors: Vec<String> = match errors {
+                        validator::ValidationErrorsKind::Struct(struct_errors) => {
+                            struct_errors.errors().keys().map(|k| k.to_string()).collect()
+                        },
+                        validator::ValidationErrorsKind::List(list_errors) => {
+                            list_errors.keys().map(|k| format!("item {}", k)).collect()
+                        },
+                        validator::ValidationErrorsKind::Field(field_errors) => {
+                            field_errors.iter().map(|e| e.code.to_string()).collect()
+                        }
+                    };
+                    format!("{}: {}", field, field_errors.join(", "))
+                })
+                .collect::<Vec<_>>()
+                .join("; ");
+            return Ok(validation_error(&format!("Page validation failed: {}", error_message)));
+        }
+    } else {
+        tracing::warn!("Pages data is not an array");
+        return Ok(validation_error("Pages must be an array"));
     }
 
     let new_design = design::ActiveModel {
@@ -342,9 +368,34 @@ pub async fn update_design(
         active_design.title = Set(validated_title);
     }
     if let Some(pages) = &data.pages {
-        if let Err(err) = InputValidator::validate_canvas_data(pages) {
-            tracing::warn!("Invalid canvas data in update: {}", err);
-            return Ok(validation_error(&err));
+        // Validate pages using comprehensive validation
+        if let Some(pages_array) = pages.as_array() {
+            if let Err(validation_errors) = validate_pages_array(pages_array) {
+                tracing::warn!("Page validation failed in update: {:?}", validation_errors);
+                // Convert validation errors to a user-friendly message
+                let error_message = validation_errors.errors()
+                    .iter()
+                    .map(|(field, errors)| {
+                        let field_errors: Vec<String> = match errors {
+                            validator::ValidationErrorsKind::Struct(struct_errors) => {
+                                struct_errors.errors().keys().map(|k| k.to_string()).collect()
+                            },
+                            validator::ValidationErrorsKind::List(list_errors) => {
+                                list_errors.keys().map(|k| format!("item {}", k)).collect()
+                            },
+                            validator::ValidationErrorsKind::Field(field_errors) => {
+                                field_errors.iter().map(|e| e.code.to_string()).collect()
+                            }
+                        };
+                        format!("{}: {}", field, field_errors.join(", "))
+                    })
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                return Ok(validation_error(&format!("Page validation failed: {}", error_message)));
+            }
+        } else {
+            tracing::warn!("Pages data is not an array in update");
+            return Ok(validation_error("Pages must be an array"));
         }
         active_design.pages = Set(pages.clone());
     }
