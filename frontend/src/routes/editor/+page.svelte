@@ -14,10 +14,11 @@
 	import {
 		handleElementSelected,
 		handleUpdateElement,
-		handleCloseEditBar
+		handleCloseEditBar,
+		handleDeleteElement
 	} from '../../lib/helpers/elementManagementHelpers';
 	import { removeAllElements } from '../../lib/utils/elementHelpers';
-	import CanvasSidebar from '../../lib/components/canvas/canvasSidebar.svelte';
+	import Sidebar from '$lib/components/sidebar/Sidebar.svelte'
 	import EditBarComponent from '../../lib/components/editing/EditBarComponent.svelte';
 	import CanvasEditPanel from '../../lib/components/editing/panels/CanvasEditPanel.svelte';
 	import MultiPageCanvas from '../../lib/components/pages/MultiPageCanvas.svelte';
@@ -38,6 +39,7 @@
 	import { authStore } from '../../lib/stores/auth';
 	import { authService } from '../../lib/services/authService';
 	import { designService } from '../../lib/services/designService';
+	import { Keystrokes, isKeystroke } from '../../lib/constants/keystrokes';
 	import { onMount } from 'svelte';
 
 	// Initialize the element registry system
@@ -164,6 +166,7 @@
 	const elementSelectedHandler = $derived(handleElementSelected(canvasWidth, canvasHeight));
 	const updateElementHandler = handleUpdateElement();
 	const closeEditBarHandler = handleCloseEditBar((id) => (selectedId = id));
+	const deleteElementHandler = handleDeleteElement((id) => (selectedId = id));
 
 	// Create canvas control handlers with state setters
 	const updateCanvasBackgroundHandler = handleUpdateCanvasBackground(
@@ -238,9 +241,16 @@
 
 	// Handle keyboard shortcuts
 	function handleKeyDown(event: KeyboardEvent) {
-		if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+		// Save shortcut
+		if (isKeystroke(event, Keystrokes.KeyS, { ctrl: true })) {
 			event.preventDefault();
 			handleManualSave();
+		}
+		
+		// Delete selected element with Delete or Backspace key
+		if ((event.key === Keystrokes.Delete || event.key === Keystrokes.Backspace) && selectedId) {
+			event.preventDefault();
+			deleteElementHandler(selectedId);
 		}
 	}
 </script>
@@ -266,7 +276,7 @@
 
 	<!-- Sidebar Component (below both headers) -->
 	<div class="fixed left-0 z-30" style="top: 112px; bottom: 0;">
-		<CanvasSidebar
+		<Sidebar
 			isOpen={sidebarOpen}
 			elementSelected={elementSelectedHandler}
 			open={handleSidebarOpen}
@@ -291,6 +301,7 @@
 					isVisible={editBarVisible}
 					onUpdateElement={updateElementHandler}
 					onClose={closeEditBarHandler}
+					onDelete={deleteElementHandler}
 				/>
 			{:else}
 				<!-- Canvas Edit Panel when nothing is selected -->
