@@ -43,7 +43,7 @@
 <!-- Header -->
 <Header />
 
-<main class="photocopied relative min-h-screen bg-black" style="margin-top: 64px;">
+<main class="photocopied bg-primary relative min-h-screen" style="margin-top: 64px;">
 	{#if $authStore.user}
 		<UserDashboard user={$authStore.user} />
 	{:else}

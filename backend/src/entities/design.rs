@@ -14,17 +14,6 @@ pub struct Model {
 
     pub title: String,
 
-    /// JSON data containing all canvas elements (shapes, text, images)
-    #[sea_orm(column_type = "Json")]
-    pub canvas_data: serde_json::Value,
-
-    /// Canvas background color
-    pub canvas_background: String,
-
-    /// Canvas dimensions as JSON: {"width": 500, "height": 400}
-    #[sea_orm(column_type = "Json")]
-    pub canvas_size: serde_json::Value,
-
     /// Multi-page design data as JSON array
     #[sea_orm(column_type = "Json")]
     pub pages: serde_json::Value,

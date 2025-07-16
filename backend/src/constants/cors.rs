@@ -22,13 +22,14 @@ impl HttpHeaders {
     pub const CONTENT_TYPE: &'static str = "Content-Type";
     pub const AUTHORIZATION: &'static str = "Authorization";
     pub const COOKIE: &'static str = "Cookie";
+    pub const XCRSK: &'static str = "X-CSRF-Token";
 }
 
 pub const COMMON_HEADERS: [&str; 4] = [
     HttpHeaders::CONTENT_TYPE,
     HttpHeaders::AUTHORIZATION,
     HttpHeaders::COOKIE,
-    "X-CSRF-Token",
+    HttpHeaders::XCRSK,
 ];
 
 pub struct AllowedOrigins;

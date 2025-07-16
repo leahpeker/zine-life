@@ -44,26 +44,6 @@ pub mod test_data {
         title: &str,
         is_public: bool,
     ) -> Result<design::Model, sea_orm::DbErr> {
-        let canvas_data = serde_json::json!({
-            "shapes": [
-                {
-                    "id": "shape-1",
-                    "type": "circle",
-                    "x": 100,
-                    "y": 100,
-                    "radius": 50,
-                    "fill": "#ff0000"
-                }
-            ],
-            "texts": [],
-            "images": []
-        });
-
-        let canvas_size = serde_json::json!({
-            "width": 500,
-            "height": 400
-        });
-
         let pages = serde_json::json!([{
             "id": "page-1",
             "pageNumber": 1,
@@ -79,9 +59,6 @@ pub mod test_data {
             id: Set(uuid::Uuid::new_v4()),
             user_id: Set(user_id),
             title: Set(title.to_string()),
-            canvas_data: Set(canvas_data),
-            canvas_background: Set("#ffffff".to_string()),
-            canvas_size: Set(canvas_size),
             pages: Set(pages),
             is_public: Set(is_public),
             created_at: Set(time::OffsetDateTime::now_utc()),
@@ -105,5 +82,29 @@ pub mod test_data {
         };
 
         session.insert(db).await
+    }
+
+    pub async fn create_test_image(
+        db: &sea_orm::DatabaseConnection,
+        user_id: uuid::Uuid,
+        filename: &str,
+        content_type: &str,
+    ) -> Result<image::Model, sea_orm::DbErr> {
+        let image = image::ActiveModel {
+            id: Set(uuid::Uuid::new_v4()),
+            user_id: Set(user_id),
+            filename: Set(filename.to_string()),
+            content_type: Set(content_type.to_string()),
+            file_size: Set(1024), // 1KB
+            width: Set(100),
+            height: Set(100),
+            storage_path: Set(format!("test/{}", filename)),
+            url: Set(format!("/api/images/{}", uuid::Uuid::new_v4())),
+            alt_text: Set(Some("Test image".to_string())),
+            created_at: Set(time::OffsetDateTime::now_utc()),
+            updated_at: Set(time::OffsetDateTime::now_utc()),
+        };
+
+        image.insert(db).await
     }
 }

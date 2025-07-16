@@ -19,13 +19,15 @@ mod test_utils;
 use auth::{OAuthConfig, github_callback, github_login, google_callback, google_login};
 use constants::{
     api_routes::ApiRoutes,
+    cookies::CookieNames,
     cors::{AllowedOrigins, COMMON_HEADERS, COMMON_METHODS},
     environment::Environment,
     errors::{ServiceNames, StatusMessages},
 };
-use handlers::{auth as auth_handlers, csrf, designs};
+use handlers::{auth as auth_handlers, csrf, designs, images};
 use middleware::{CsrfMiddleware, HttpsRedirect, SecurityHeaders};
 use migrations::Migrator;
+
 
 async fn health_check() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
@@ -34,11 +36,6 @@ async fn health_check() -> Result<HttpResponse> {
     })))
 }
 
-async fn hello() -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "message": "Hello from Zine Life Backend!"
-    })))
-}
 
 async fn db_status(_db: web::Data<DatabaseConnection>) -> Result<HttpResponse> {
     // Simple database status check
@@ -54,8 +51,6 @@ async fn main(
     #[shuttle_shared_db::Postgres] db_url: String,
     #[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
 ) -> ShuttleActixWeb<impl FnOnce(&mut web::ServiceConfig) + Send + Clone + 'static> {
-    println!("Starting Zine Life Backend with database connection...");
-    println!("Database URL: {}", db_url);
 
     // Create database connection
     let db: DatabaseConnection = Database::connect(&db_url)
@@ -63,21 +58,17 @@ async fn main(
         .expect("Failed to connect to database");
 
     // Run migrations
-    println!("Running database migrations...");
     Migrator::up(&db, None)
         .await
         .expect("Failed to run migrations");
 
-    println!("Database setup complete!");
 
     // Initialize OAuth configuration with secrets
     let oauth_config =
         OAuthConfig::from_secrets(&secrets).expect("Failed to initialize OAuth configuration");
 
     // Initialize session key for CSRF protection (must be exactly 64 bytes)
-    let session_key = secrets.get("SESSION_KEY").unwrap_or_else(|| {
-        "your-session-key-here-change-in-production-must-be-64-bytes-long".to_string()
-    });
+    let session_key = secrets.get("SESSION_KEY").unwrap();
 
     // Ensure the key is exactly 64 bytes
     let mut key_bytes = [0u8; 64];
@@ -109,7 +100,7 @@ async fn main(
                             CookieSessionStore::default(),
                             secret_key.clone(),
                         )
-                        .cookie_name("session".to_string())
+                        .cookie_name(CookieNames::SESSION.to_string())
                         .cookie_secure(is_production)
                         .session_lifecycle(PersistentSession::default())
                         .build(),
@@ -131,7 +122,6 @@ async fn main(
                         cors
                     })
                     .route(ApiRoutes::HEALTH, web::get().to(health_check))
-                    .route(ApiRoutes::API_HELLO, web::get().to(hello))
                     .route(ApiRoutes::API_DB_STATUS, web::get().to(db_status))
                     // Auth routes
                     .route(ApiRoutes::AUTH_GOOGLE, web::get().to(google_login))
@@ -173,6 +163,16 @@ async fn main(
                     .route(
                         ApiRoutes::API_DESIGNS_BY_ID,
                         web::delete().to(designs::delete_design),
+                    )
+                    // Image routes
+                    .route(ApiRoutes::API_IMAGES, web::get().to(images::list_images))
+                    .route(
+                        ApiRoutes::API_IMAGES,
+                        web::post().to(images::upload_image),
+                    )
+                    .route(
+                        ApiRoutes::API_IMAGES_BY_ID,
+                        web::get().to(images::get_image),
                     )
                     // CSRF route
                     .route(

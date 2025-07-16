@@ -1,13 +1,13 @@
 # Zine Life 🤘
 
-A post-punk inspired design editor for creating underground zines, flyers, and graphics.
+A design editor for creating zines, flyers, and graphics.
 
 ## STATUS UPDATE (2025-07-01)
 **🎉 MASSIVE PROGRESS COMPLETED 🎉**
 
 ## What's Done ✅
 
-### Backend (100% Complete)
+### Backend (100% Complete) 
 - ✅ **Rust + Actix-web** - High-performance API server
 - ✅ **PostgreSQL + SeaORM** - Production database with migrations
 - ✅ **Google OAuth** - Complete authentication flow
@@ -32,7 +32,7 @@ Sessions: JWT token management with expiration
 
 ## Next Steps 🚨
 
-### 1. 🎨 POST-PUNK AESTHETIC OVERHAUL (TOP PRIORITY)
+### 1. 🎨 AESTHETIC OVERHAUL (TOP PRIORITY)
 Transform from clean/corporate → underground/DIY:
 - **Colors**: Black backgrounds, white text, neon accents
 - **Typography**: Stencil fonts, angular/industrial styling

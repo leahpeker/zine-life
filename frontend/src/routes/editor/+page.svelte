@@ -29,10 +29,10 @@
 	import { initializeApp } from '../../lib/init';
 	import {
 		LayoutDimensions,
-		StyleGuide,
 		SaveStatus,
 		type SaveStatusType
 	} from '../../lib/constants';
+	import { StyleGuide } from '../../lib/constants/styleGuide';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { authStore } from '../../lib/stores/auth';

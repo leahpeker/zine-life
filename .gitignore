@@ -6,7 +6,12 @@ node_modules
 .netlify
 .wrangler
 /.svelte-kit
+frontend/.svelte-kit
 /build
+frontend/build
+dist
+frontend/dist
+package-lock.json
 
 # OS
 .DS_Store

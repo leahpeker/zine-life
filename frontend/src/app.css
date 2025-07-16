@@ -6,31 +6,31 @@
 	--font-family-punk: 'Orbitron', monospace;
 	--font-family-industrial: 'Rajdhani', sans-serif;
 
-	/* Zine Life Color System */
-	--color-primary: #4ade80; /* green-400 - main accent */
-	--color-primary-dark: #22c55e; /* green-500 - hover states */
-	--color-primary-light: #86efac; /* green-300 - lighter accents */
-
-	--color-secondary: #ffffff; /* white - text on dark bg */
-	--color-secondary-muted: #f3f4f6; /* gray-100 - light backgrounds */
-
-	--color-background: #000000; /* black - main background */
-	--color-background-panel: #111827; /* gray-900 - panels */
-	--color-background-card: #1f2937; /* gray-800 - cards */
-	--color-background-input: #374151; /* gray-700 - inputs */
-
-	--color-text: #ffffff; /* white - primary text */
-	--color-text-muted: #9ca3af; /* gray-400 - secondary text */
-	--color-text-disabled: #6b7280; /* gray-500 - disabled text */
-
-	--color-border: #374151; /* gray-700 - default borders */
-	--color-border-accent: #4ade80; /* green-400 - accent borders */
-	--color-border-muted: #1f2937; /* gray-800 - subtle borders */
-
-	--color-danger: #ef4444; /* red-500 - errors/delete */
-	--color-danger-dark: #dc2626; /* red-600 - hover */
-	--color-warning: #f59e0b; /* amber-500 - warnings */
-	--color-success: #10b981; /* emerald-500 - success states */
+	/* Dark theme colors from Colors enum */
+	--color-primary: #06b6d4;        /* Colors.Cyan400 */
+	--color-primary-dark: #0891b2;   /* Colors.Cyan500 */
+	--color-primary-light: #22d3ee;  /* Colors.Cyan300 */
+	
+	--color-secondary: #ffffff;      /* Colors.White */
+	--color-secondary-muted: #f3f4f6; /* Colors.Gray100 */
+	
+	--color-background: #000000;     /* Colors.Black */
+	--color-background-panel: #111827; /* Colors.Gray900 */
+	--color-background-card: #1f2937; /* Colors.Gray800 */
+	--color-background-input: #374151; /* Colors.Gray700 */
+	
+	--color-text: #ffffff;           /* Colors.White */
+	--color-text-muted: #9ca3af;    /* Colors.Gray400 */
+	--color-text-disabled: #6b7280; /* Colors.Gray500 */
+	
+	--color-border: #374151;         /* Colors.Gray700 */
+	--color-border-accent: #06b6d4;  /* Colors.Cyan400 */
+	--color-border-muted: #1f2937;   /* Colors.Gray800 */
+	
+	--color-danger: #ef4444;         /* Colors.Red500 */
+	--color-danger-dark: #dc2626;    /* Colors.Red600 */
+	--color-warning: #f59e0b;        /* Colors.Amber500 */
+	--color-success: #10b981;        /* Colors.Green500 */
 }
 
 /* Post-punk visual effects */

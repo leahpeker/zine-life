@@ -3,6 +3,7 @@ pub struct CookieNames;
 impl CookieNames {
     pub const AUTH_TOKEN: &'static str = "auth_token";
     pub const SESSION_ID: &'static str = "session_id";
+    pub const SESSION: &'static str = "session";
 }
 
 pub struct CookieProperties;

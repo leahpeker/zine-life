@@ -29,9 +29,9 @@ impl InputValidator {
 
     /// Validate JSON canvas data
     pub fn validate_canvas_data(data: &Value) -> Result<(), String> {
-        // Check if it's a valid JSON object
-        if !data.is_object() {
-            return Err("Canvas data must be a valid JSON object".to_string());
+        // Check if it's a valid JSON object or array (pages can be an array)
+        if !data.is_object() && !data.is_array() {
+            return Err("Canvas data must be a valid JSON object or array".to_string());
         }
 
         // Check size constraints (prevent extremely large payloads)
@@ -59,21 +59,6 @@ impl InputValidator {
         Ok(sanitized)
     }
 
-    /// Validate canvas size
-    pub fn validate_canvas_size(size: &Value) -> Result<(), String> {
-        if let Some(obj) = size.as_object() {
-            // Check for required width and height
-            if let (Some(width), Some(height)) = (obj.get("width"), obj.get("height")) {
-                if let (Some(w), Some(h)) = (width.as_f64(), height.as_f64()) {
-                    if w > 0.0 && h > 0.0 && w <= 10000.0 && h <= 10000.0 {
-                        return Ok(());
-                    }
-                }
-            }
-        }
-
-        Err("Invalid canvas size (must have width and height between 1-10000)".to_string())
-    }
 
     /// Sanitize user input for XSS prevention
     pub fn sanitize_user_input(input: &str) -> String {

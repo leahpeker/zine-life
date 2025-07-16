@@ -3,7 +3,6 @@ pub struct ApiRoutes;
 impl ApiRoutes {
     // Health routes
     pub const HEALTH: &'static str = "/health";
-    pub const API_HELLO: &'static str = "/api/hello";
     pub const API_DB_STATUS: &'static str = "/api/db-status";
 
     // Auth routes
@@ -18,6 +17,10 @@ impl ApiRoutes {
     pub const API_DESIGNS: &'static str = "/api/designs";
     pub const API_DESIGNS_PUBLIC: &'static str = "/api/designs/public";
     pub const API_DESIGNS_BY_ID: &'static str = "/api/designs/{id}";
+
+    // Image routes
+    pub const API_IMAGES: &'static str = "/api/images";
+    pub const API_IMAGES_BY_ID: &'static str = "/api/images/{id}";
 
     // CSRF routes
     pub const API_CSRF_TOKEN: &'static str = "/api/csrf-token";

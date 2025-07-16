@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { authStore } from '$lib/stores/auth';
-	import { authService } from '$lib/services/authService';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Header from '$lib/components/layout/Header.svelte';
@@ -9,6 +8,7 @@
 	import { DESIGN_FILTERS, FILTER_CONFIG, type DesignFilter } from '$lib/constants/filters';
 	import { ROUTES } from '$lib/constants/routes';
 	import { UI_TEXT } from '$lib/constants/ui-text';
+	import { StyleGuide } from '$lib/constants/styleGuide';
 	import SimpleThumbnail from '$lib/components/design/SimpleThumbnail.svelte';
 	import NewDesignButton from '$lib/components/layout/NewDesignButton.svelte';
 
@@ -105,7 +105,7 @@
 <Header showBackButton={true} />
 
 <!-- Dashboard -->
-<div class="photocopied min-h-screen bg-black text-white" style="margin-top: 64px;">
+<div class="photocopied min-h-screen bg-background text-text" style="margin-top: 64px;">
 	<div class="mx-auto max-w-6xl px-4 py-8">
 		<!-- Header -->
 		<div class="mb-8">
@@ -121,8 +121,7 @@
 		<div class="mb-8 flex flex-wrap items-center justify-between gap-4">
 			<!-- New Design Button -->
 			<NewDesignButton
-				class="font-industrial -skew-x-6 transform border-2 px-6 py-3 font-black tracking-wide transition-all hover:brightness-110"
-				style="background-color: var(--color-primary); color: black; border-color: var(--color-primary);"
+				class="{StyleGuide.PrimaryButton}"
 			>
 				NEW DESIGN
 			</NewDesignButton>
@@ -132,12 +131,7 @@
 				{#each Object.entries(FILTER_CONFIG) as [filterKey, config]}
 					<button
 						onclick={() => (filter = filterKey)}
-						class="font-industrial group relative border-2 px-4 py-2 font-black tracking-wide transition-all"
-						style="
-							background-color: {filter === filterKey ? 'var(--color-primary)' : 'transparent'};
-							color: {filter === filterKey ? 'black' : 'var(--color-primary)'};
-							border-color: var(--color-primary);
-						"
+						class="{filter === filterKey ? StyleGuide.PrimaryButton : StyleGuide.SecondaryButton} group relative px-4 py-2"
 						aria-label={config.ariaLabel}
 						aria-pressed={filter === filterKey}
 					>
@@ -146,8 +140,7 @@
 						</span>
 						{#if filter !== filterKey}
 							<span
-								class="absolute inset-0 flex items-center justify-center font-black opacity-0 transition-opacity group-hover:opacity-100"
-								style="background-color: var(--color-primary); color: black;"
+								class="absolute inset-0 flex items-center justify-center font-black opacity-0 transition-opacity group-hover:opacity-100 bg-primary text-black"
 							>
 								{config.label}
 							</span>
@@ -169,7 +162,7 @@
 				<div class="text-danger mb-4 font-mono text-xl">{error}</div>
 				<button
 					onclick={refreshDesigns}
-					class="bg-primary hover:bg-primary-light border-primary font-industrial -skew-x-6 transform border-2 px-6 py-2 font-black tracking-wide text-black transition-colors"
+					class="{StyleGuide.PrimaryButton}"
 					aria-label="Retry loading designs"
 				>
 					RETRY
@@ -178,16 +171,16 @@
 
 			<!-- Empty State -->
 		{:else if filteredDesigns.length === 0}
-			<div class="border-background-card bg-background-panel border-2 py-16 text-center">
+			<div class="{StyleGuide.Card} py-16 text-center">
 				<div class="text-primary mb-4 text-6xl">[+]</div>
-				<h2 class="font-industrial mb-4 text-2xl font-black text-white">
+				<h2 class="font-industrial mb-4 text-2xl font-black text-text">
 					{UI_TEXT.MESSAGES.EMPTY_STATE_TITLE(filter)}
 				</h2>
 				<p class="text-text-muted mb-6 font-mono">
 					{UI_TEXT.MESSAGES.EMPTY_STATE_DESCRIPTION(filter)}
 				</p>
 				<NewDesignButton
-					class="bg-primary hover:bg-primary-light border-primary font-industrial -skew-x-6 transform border-2 px-6 py-3 font-black tracking-wide text-black transition-colors"
+					class="{StyleGuide.PrimaryButton}"
 				>
 					CREATE FIRST DESIGN
 				</NewDesignButton>
@@ -202,7 +195,7 @@
 			>
 				{#each filteredDesigns as design}
 					<li
-						class="border-background-card bg-background-panel hover:border-primary photocopied border-2 transition-colors"
+						class="{StyleGuide.Card}"
 					>
 						<!-- Design Preview -->
 						<div class="bg-background-card relative flex h-48 items-center justify-center">
@@ -212,8 +205,8 @@
 							<div class="absolute right-2 top-2">
 								<span
 									class="font-industrial px-2 py-1 text-xs font-black tracking-wide {design.is_public
-										? 'bg-primary text-black'
-										: 'bg-background-input text-text-muted'}"
+										? StyleGuide.PublicBadge
+										: StyleGuide.PrivateBadge}"
 								>
 									{design.is_public ? 'PUBLIC' : 'PRIVATE'}
 								</span>
@@ -222,7 +215,7 @@
 
 						<!-- Design Info -->
 						<div class="p-4">
-							<h3 class="font-industrial mb-2 text-lg font-black text-white">{design.title}</h3>
+							<h3 class="font-industrial mb-2 text-lg font-black text-text">{design.title}</h3>
 							<p class="text-text-muted mb-4 font-mono text-xs">
 								Created: {new Date(design.created_at).toLocaleDateString()}<br />
 								Updated: {new Date(design.updated_at).toLocaleDateString()}
@@ -232,14 +225,14 @@
 							<div class="flex gap-2">
 								<button
 									onclick={() => editDesign(design.id)}
-									class="bg-primary hover:bg-primary-light border-primary font-industrial border px-3 py-1 text-sm font-black tracking-wide text-black transition-colors"
+									class="{StyleGuide.SmallButton}"
 									aria-label="Edit {design.title}"
 								>
 									EDIT
 								</button>
 								<button
 									onclick={() => deleteDesign(design.id)}
-									class="text-danger border-danger hover:bg-danger font-industrial border bg-transparent px-3 py-1 text-sm font-black tracking-wide transition-colors hover:text-black"
+									class="{StyleGuide.DangerButton}"
 									aria-label="Delete {design.title}"
 								>
 									DELETE

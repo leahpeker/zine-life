@@ -63,16 +63,3 @@ fn test_validate_canvas_background() {
     assert!(InputValidator::validate_canvas_background(&"x".repeat(51)).is_err());
 }
 
-#[test]
-fn test_validate_canvas_size() {
-    // Valid sizes
-    assert!(InputValidator::validate_canvas_size(&json!({"width": 800, "height": 600})).is_ok());
-    assert!(InputValidator::validate_canvas_size(&json!({"width": 1920, "height": 1080})).is_ok());
-
-    // Invalid sizes
-    assert!(InputValidator::validate_canvas_size(&json!({"width": 0, "height": 600})).is_err());
-    assert!(InputValidator::validate_canvas_size(&json!({"width": 800, "height": 0})).is_err());
-    assert!(InputValidator::validate_canvas_size(&json!({"width": 15000, "height": 600})).is_err());
-    assert!(InputValidator::validate_canvas_size(&json!({"width": 800})).is_err()); // missing height
-    assert!(InputValidator::validate_canvas_size(&json!("invalid")).is_err());
-}
