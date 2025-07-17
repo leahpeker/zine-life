@@ -11,6 +11,7 @@ use uuid::Uuid;
 use crate::auth::middleware::get_current_user;
 use crate::entities::{design, user};
 use crate::middleware::{CsrfProtector, InputValidator, validation_error};
+use crate::services::ThumbnailService;
 use crate::validation::validate_pages_array;
 use actix_session::Session;
 
@@ -192,6 +193,7 @@ pub async fn create_design(
     req: HttpRequest,
     session: Session,
     db: web::Data<DatabaseConnection>,
+    thumbnail_service: web::Data<ThumbnailService>,
     data: web::Json<CreateDesignRequest>,
 ) -> Result<HttpResponse> {
     tracing::info!("Creating new design with data: {:?}", data);
@@ -277,6 +279,24 @@ pub async fn create_design(
 
     tracing::info!("Design created successfully with id: {}", design.id);
 
+    // Generate thumbnail in background
+    let design_id_str = design.id.to_string();
+    let pages_for_thumbnail = if let Some(pages_array) = data.pages.as_array() {
+        pages_array.clone()
+    } else {
+        vec![]
+    };
+    
+    if !pages_for_thumbnail.is_empty() {
+        let thumbnail_service_clone = thumbnail_service.clone();
+        let design_id_clone = design_id_str.clone();
+        tokio::spawn(async move {
+            if let Err(e) = thumbnail_service_clone.generate_thumbnail(&design_id_clone, &pages_for_thumbnail).await {
+                tracing::error!("Failed to generate thumbnail for design {}: {}", design_id_clone, e);
+            }
+        });
+    }
+
     let response = DesignResponse::from((design, Some(current_user)));
     Ok(HttpResponse::Created().json(response))
 }
@@ -287,6 +307,7 @@ pub async fn update_design(
     session: Session,
     path: web::Path<String>,
     db: web::Data<DatabaseConnection>,
+    thumbnail_service: web::Data<ThumbnailService>,
     data: web::Json<UpdateDesignRequest>,
 ) -> Result<HttpResponse> {
     let design_id_str = path.into_inner();
@@ -413,6 +434,25 @@ pub async fn update_design(
 
     tracing::info!("Design updated successfully");
 
+    // Generate thumbnail in background if pages were updated
+    if data.pages.is_some() {
+        let pages_for_thumbnail = if let Some(pages_array) = updated_design.pages.as_array() {
+            pages_array.clone()
+        } else {
+            vec![]
+        };
+        
+        if !pages_for_thumbnail.is_empty() {
+            let thumbnail_service_clone = thumbnail_service.clone();
+            let design_id_clone = design_id_str.clone();
+            tokio::spawn(async move {
+                if let Err(e) = thumbnail_service_clone.generate_thumbnail(&design_id_clone, &pages_for_thumbnail).await {
+                    tracing::error!("Failed to generate thumbnail for design {}: {}", design_id_clone, e);
+                }
+            });
+        }
+    }
+
     let response = DesignResponse::from((updated_design, Some(current_user)));
     Ok(HttpResponse::Ok().json(response))
 }
@@ -422,6 +462,7 @@ pub async fn delete_design(
     req: HttpRequest,
     path: web::Path<String>,
     db: web::Data<DatabaseConnection>,
+    thumbnail_service: web::Data<ThumbnailService>,
 ) -> Result<HttpResponse> {
     let current_user = get_current_user(&req, db.as_ref())
         .await
@@ -449,6 +490,15 @@ pub async fn delete_design(
         .map_err(|e| {
             actix_web::error::ErrorInternalServerError(format!("Failed to delete design: {}", e))
         })?;
+
+    // Delete thumbnail in background
+    let design_id_str = design_id.to_string();
+    let thumbnail_service_clone = thumbnail_service.clone();
+    tokio::spawn(async move {
+        if let Err(e) = thumbnail_service_clone.delete_thumbnail(&design_id_str).await {
+            tracing::error!("Failed to delete thumbnail for design {}: {}", design_id_str, e);
+        }
+    });
 
     Ok(HttpResponse::NoContent().finish())
 }

@@ -12,6 +12,7 @@ mod entities;
 mod handlers;
 mod middleware;
 mod migrations;
+mod services;
 mod validation;
 
 #[cfg(test)]
@@ -25,9 +26,10 @@ use constants::{
     environment::Environment,
     errors::{ServiceNames, StatusMessages},
 };
-use handlers::{auth as auth_handlers, csrf, designs, images};
+use handlers::{auth as auth_handlers, csrf, designs, images, thumbnails};
 use middleware::{CsrfMiddleware, HttpsRedirect, SecurityHeaders};
 use migrations::Migrator;
+use services::ThumbnailService;
 
 
 async fn health_check() -> Result<HttpResponse> {
@@ -63,6 +65,9 @@ async fn main(
         .await
         .expect("Failed to run migrations");
 
+    // Initialize thumbnail service
+    let thumbnail_service = ThumbnailService::new("uploads/thumbnails".to_string());
+    thumbnail_service.init().await.expect("Failed to initialize thumbnail service");
 
     // Initialize OAuth configuration with secrets
     let oauth_config =
@@ -91,6 +96,7 @@ async fn main(
         cfg.app_data(web::Data::new(db))
             .app_data(web::Data::new(oauth_config))
             .app_data(web::Data::new(secrets))
+            .app_data(web::Data::new(thumbnail_service))
             .service(
                 web::scope("")
                     .wrap(SecurityHeaders)
@@ -174,6 +180,11 @@ async fn main(
                     .route(
                         ApiRoutes::API_IMAGES_BY_ID,
                         web::get().to(images::get_image),
+                    )
+                    // Thumbnail route
+                    .route(
+                        "/api/designs/{id}/thumbnail",
+                        web::get().to(thumbnails::serve_thumbnail),
                     )
                     // CSRF route
                     .route(

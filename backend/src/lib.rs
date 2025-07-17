@@ -4,5 +4,6 @@ pub mod entities;
 pub mod handlers;
 pub mod middleware;
 pub mod migrations;
+pub mod services;
 pub mod test_utils;
 pub mod validation;
